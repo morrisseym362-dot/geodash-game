@@ -134,7 +134,7 @@
     ];
 
     const ALL_LEVELS = {
-        'level1Button': { data: levelData1, name: 'Level 1', number: 1 }, // Added level number
+        'level1Button': { data: levelData1, name: 'Level 1', number: 1 }, // ADDED level number
         'level2Button': { data: levelData2, name: 'Level 2', number: 2 },
         'level3Button': { data: levelData3, name: 'Level 3', number: 3 },
         'level4Button': { data: levelData4, name: 'Level 4', number: 4 },
@@ -166,18 +166,18 @@
     let animationFrameId; 
     let isInfiniteMode = false; 
 
-    // Speed constants for level progression
-    const BASE_SPEED = 5; // The starting speed for Level 1
-    const LEVEL_SPEED_INCREMENT = 0.3; // How much speed increases per level
-
+    // --- SPEED CONSTANTS FOR PROGRESSION ---
+    const BASE_SPEED = 5; // Starting speed for Level 1 and Infinite Mode
+    const LEVEL_SPEED_INCREMENT = 0.3; // Speed added per level (Level 2 is BASE_SPEED + 0.3)
+    const INFINITE_SPEED_UP_INTERVAL = 400; // Increase speed every X frames in Infinite Mode
+    const INFINITE_SPEED_UP_AMOUNT = 0.1; // Amount to increase speed by
+    
     // Infinite mode specific variables
     let score = 0;
     let infiniteObstacleTimer = 0;
     const MIN_INFINITE_DELAY = 90;
     const MAX_INFINITE_DELAY = 180;
-    const INFINITE_SPEED_UP_INTERVAL = 400; // Increase speed every X frames
-    const INFINITE_SPEED_UP_AMOUNT = 0.1; // Amount to increase speed by
-    
+
     // --- Player/Obstacle Properties (Unchanged) ---
     const playerWidth = 30;
     const playerHeight = 30;
@@ -198,7 +198,7 @@
             activeColors = LEVEL_SCHEMES['infiniteMode'];
             score = 0;
             infiniteObstacleTimer = 120; // Initial delay
-            gameSpeed = BASE_SPEED; // Start infinite mode at Level 1 speed
+            gameSpeed = BASE_SPEED; // Start infinite mode at base speed
         } else {
             const levelInfo = ALL_LEVELS[levelKey];
             currentLevelData = levelInfo.data;
@@ -206,11 +206,10 @@
             levelLength = calculateLevelLength(currentLevelData);
             activeColors = LEVEL_SCHEMES[levelKey]; 
             
-            // --- SPEED INCREASE FOR LEVELS ---
-            // Calculate speed based on level number
+            // --- SET SPEED BASED ON LEVEL NUMBER ---
             const levelNumber = levelInfo.number;
             gameSpeed = BASE_SPEED + (levelNumber - 1) * LEVEL_SPEED_INCREMENT;
-            // --- END SPEED INCREASE ---
+            // ----------------------------------------
             
             if (currentLevelData && currentLevelData.length > 0) {
                 frameDelay = currentLevelData[0][0]; 
@@ -228,6 +227,7 @@
         };
 
         gravity = 0.7;
+        // gameSpeed is set above based on mode/level
         obstacles = [];
         isGameOver = false;
         isLevelComplete = false; 
@@ -240,7 +240,7 @@
                 y: seededRandom() * (actualGroundY - 100), 
                 width: seededRandom() * 50 + 20, 
                 height: (actualGroundY - 20) - (seededRandom() * 200), 
-                speed: gameSpeed * 0.3 // Use the new gameSpeed
+                speed: gameSpeed * 0.3 // Initial speed for background objects
             });
         }
 
@@ -279,7 +279,7 @@
         animationFrameId = requestAnimationFrame(gameLoop);
     }
     
-    // --- Core Game Functions (MODIFIED FOR INFINITE MODE SPEED INCREASE) ---
+    // --- Core Game Functions (MODIFIED FOR INFINITE MODE SPEED UP) ---
     function updateObstacles() {
         if (isInfiniteMode) {
             infiniteObstacleTimer--;
@@ -301,8 +301,8 @@
                 // Reset timer with a new random delay
                 infiniteObstacleTimer = MIN_INFINITE_DELAY + Math.floor(Math.random() * (MAX_INFINITE_DELAY - MIN_INFINITE_DELAY));
             }
-            
-            // Slightly increase speed over time in infinite mode
+
+            // Continuous speed increase logic for Infinite Mode
             if (frames % INFINITE_SPEED_UP_INTERVAL === 0) { 
                  gameSpeed += INFINITE_SPEED_UP_AMOUNT;
             }
@@ -346,6 +346,8 @@
                 obstacles.splice(i, 1);
             }
         }
+        
+        // The old speed-up logic for infinite mode is now inside the if (isInfiniteMode) block above
     }
     
     function checkLevelEnd() {
@@ -365,7 +367,7 @@
         }
     }
     
-    // --- Score / Progress Functions (Unchanged) ---
+    // --- Score / Progress Functions (MODIFIED to show speed) ---
     function updateProgressScore() {
         let progress;
         if (isLevelComplete) {
@@ -377,6 +379,7 @@
         ctx.fillStyle = 'white';
         ctx.font = '24px Arial';
         ctx.fillText(`Progress (${currentLevelName}): ` + progress + '%', 20, 30);
+        ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}`, canvas.width - 150, 30);
     }
 
     function updateInfiniteScore() {
@@ -384,11 +387,11 @@
         ctx.fillStyle = 'white';
         ctx.font = '24px Arial';
         ctx.fillText('Score: ' + score, 20, 30);
-        // Also show speed in infinite mode for user feedback
+        // Display current speed for user feedback
         ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}`, canvas.width - 150, 30);
     }
     
-    // --- Screen Logic (Unchanged) ---
+    // --- Screen Logic (MODIFIED to include final speed) ---
     function showLevelComplete() {
         cancelAnimationFrame(animationFrameId); 
         if (!document.getElementById('screenText')) {
@@ -398,7 +401,7 @@
             screenText.style.fontSize = '48px';
             screenText.style.textAlign = 'center';
             screenText.style.textShadow = `0 0 20px ${activeColors.playerCore}`; 
-            screenText.innerHTML = `${currentLevelName} COMPLETED!<br><span style="font-size: 24px;">Progress: 100%</span><br><span style="font-size: 24px;">Click or Press Space to Return to Menu</span>`;
+            screenText.innerHTML = `${currentLevelName} COMPLETED!<br><span style="font-size: 24px;">Progress: 100% (Final Speed: ${gameSpeed.toFixed(1)})</span><br><span style="font-size: 24px;">Click or Press Space to Return to Menu</span>`;
             document.body.appendChild(screenText);
         }
     }
@@ -438,7 +441,7 @@
     function drawBackground() {
         ctx.fillStyle = activeColors.bgSecondary; 
         for (let obj of backgroundObjects) {
-            // Update object speed based on current gameSpeed
+            // Update object speed based on current gameSpeed for background movement
             obj.speed = gameSpeed * 0.3; 
             
             obj.x -= obj.speed;
@@ -494,11 +497,9 @@
         }
     }
     
-    // --- Collision Function (Unchanged) ---
+    // --- New/Updated Collision Function (Unchanged) ---
     // Helper function to check if a point (px, py) is inside a triangle (t1, t2, t3)
-    // Uses the Barycentric coordinate system check (sign method)
     function pointInTriangle(px, py, t1x, t1y, t2x, t2y, t3x, t3y) {
-        // Calculate sign of (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3)
         function sign(p1x, p1y, p2x, p2y, p3x, p3y) {
             return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
         }
@@ -507,16 +508,13 @@
         const d2 = sign(px, py, t2x, t2y, t3x, t3y);
         const d3 = sign(px, py, t3x, t3y, t1x, t1y);
 
-        // Optimization: check if all signs are non-negative or all non-positive
         const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
         const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
 
-        // Point is in triangle if signs are the same (or zero)
         return !(has_neg && has_pos);
     }
 
     function checkCollision(player, obstacle) {
-        // 1. Initial broad-phase AABB check for quick exit (still required for both types)
         if (!(
             player.x < obstacle.x + obstacle.width &&
             player.x + player.width > obstacle.x &&
@@ -526,18 +524,11 @@
             return false;
         }
 
-        // 2. Fine-phase check based on obstacle type
         if (obstacle.type === 'block') {
-            // AABB is sufficient for blocks
             return true;
         } 
         
         if (obstacle.type === 'spike') {
-            // A spike is a triangle with vertices:
-            // V1: (obs.x, obs.y + obs.height) - Bottom-Left
-            // V2: (obs.x + obs.width / 2, obs.y) - Top-Middle (Tip)
-            // V3: (obs.x + obs.width, obs.y + obs.height) - Bottom-Right
-
             const v1x = obstacle.x;
             const v1y = obstacle.y + obstacle.height;
             const v2x = obstacle.x + obstacle.width / 2;
@@ -545,12 +536,11 @@
             const v3x = obstacle.x + obstacle.width;
             const v3y = obstacle.y + obstacle.height;
 
-            // Check if any of the 4 corners of the player box are inside the triangle
             const playerCorners = [
-                {x: player.x, y: player.y}, // Top-Left
-                {x: player.x + player.width, y: player.y}, // Top-Right
-                {x: player.x, y: player.y + player.height}, // Bottom-Left
-                {x: player.x + player.width, y: player.y + player.height} // Bottom-Right
+                {x: player.x, y: player.y}, 
+                {x: player.x + player.width, y: player.y}, 
+                {x: player.x, y: player.y + player.height}, 
+                {x: player.x + player.width, y: player.y + player.height} 
             ];
 
             for (const corner of playerCorners) {
@@ -559,16 +549,10 @@
                 }
             }
             
-            // Note: This basic check (corners only) is a good performance trade-off 
-            // for a small player colliding with a large spike. For a more robust check,
-            // you'd also check if any of the spike's edges intersect the player's AABB.
-            // For now, checking player corners against the spike triangle is a good, 
-            // more accurate replacement for the spike's AABB.
-
             return false;
         }
 
-        return false; // Should not be reached
+        return false; 
     }
     
     // --- Menu Logic and Event Listeners (Unchanged) ---
