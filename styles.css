@@ -80,52 +80,33 @@ canvas {
     margin-right: auto;
 }
 .level-button {
-    width: 100%; /* Ensure level buttons fill grid space */
-    aspect-ratio: 1 / 1; /* Make them square */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
+    width: 100%; 
+    box-sizing: border-box; 
+    height: 45px; 
+    line-height: 25px; 
+    padding: 10px 0; 
+    margin: 0;
+    font-size: clamp(0.9em, 3vw, 1.2em);
+    text-align: center;
 }
 
-/* --- NEW: Game Over/Level Complete Overlay Styles --- */
-.game-screen-overlay {
+@media (max-width: 500px) {
+    #levelGrid {
+        grid-template-columns: repeat(4, 1fr);
+        max-width: 350px;
+    }
+}
+
+/* Game Over / Win Text Overlay */
+#screenText {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.8);
-    padding: 40px 60px;
-    border-radius: 15px;
-    box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
-    z-index: 10; /* Ensure it's above the canvas */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.game-screen-overlay h2 {
-    font-size: clamp(2em, 8vw, 4em);
-    margin-bottom: 10px;
-}
-.score-text {
-    font-size: clamp(1em, 4vw, 1.5em);
-    color: #ccc;
-}
-.button-group {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 20px;
-}
-
-/* Style for the Retry/Next button to make it stand out */
-.retry-button {
-    background-color: #FF6600;
-    border-color: #FFBB33;
-    color: white;
-}
-.retry-button:hover {
-    background-color: #FF8800;
-    box-shadow: 0 0 15px #FF8800;
+    z-index: 10; 
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    width: 80%; 
+    max-width: 400px;
 }
