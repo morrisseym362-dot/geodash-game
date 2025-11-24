@@ -166,17 +166,17 @@
     let animationFrameId; 
     let isInfiniteMode = false; 
 
-    // --- SPEED CONSTANTS FOR PROGRESSION (MODIFIED) ---
-    const BASE_SPEED = 10; // Increased start speed to 10 for all modes
-    const LEVEL_SPEED_INCREMENT = 1.0; // Increased to make higher levels much faster
+    // --- SPEED CONSTANTS FOR PROGRESSION (Unchanged) ---
+    const BASE_SPEED = 10; 
+    const LEVEL_SPEED_INCREMENT = 1.0; 
     const INFINITE_SPEED_UP_INTERVAL = 400; 
-    const INFINITE_SPEED_UP_AMOUNT = 0.5; // Increased speed-up rate to 0.5
+    const INFINITE_SPEED_UP_AMOUNT = 0.5; 
     
     // --- INFINITE MODE OBSTACLE TIMING CONSTANTS (MODIFIED) ---
     const BASE_MIN_DELAY = 90; // Starting minimum gap (frames)
     const BASE_MAX_DELAY = 180; // Starting maximum gap (frames)
     const MIN_POSSIBLE_DELAY = 45; // Absolute minimum gap limit
-    const DELAY_REDUCTION_PER_SCORE = 7; // Frames reduced per obstacle passed (Increased to 7)
+    const DELAY_REDUCTION_PER_SCORE = 10; // Frames reduced per obstacle passed (Increased to 10)
     
     // Infinite mode specific variables
     let score = 0;
@@ -212,7 +212,6 @@
             
             // --- SET SPEED BASED ON LEVEL NUMBER ---
             const levelNumber = levelInfo.number;
-            // Level Speed = BASE_SPEED (10) + (Level Number - 1) * LEVEL_SPEED_INCREMENT (1.0)
             gameSpeed = BASE_SPEED + (levelNumber - 1) * LEVEL_SPEED_INCREMENT;
             // ----------------------------------------
             
