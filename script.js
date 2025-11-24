@@ -14,7 +14,7 @@
     }
     // --- END SEEDING ---
 
-    // --- COLOR SCHEMES ---
+    // --- COLOR SCHEMES (Omitted for brevity, content is unchanged) ---
     const LEVEL_SCHEMES = {
         'level1Button': { 
             bgPrimary: '#222', bgSecondary: '#555', ground: '#FFFFFF', 
@@ -72,7 +72,7 @@
             obsPrimary: '#FF4500', obsAccent: '#CC3700'
         }
     };
-
+    
     // --- LEVEL DEFINITIONS (Omitted for brevity, content is unchanged) ---
     const levelData1 = [
         [0, 50, 'spike'], [120, 70, 'block'], [150, 40, 'spike'], [100, 100, 'block'], 
@@ -153,6 +153,19 @@
         });
         return length + 50; 
     }
+
+    // --- Game Speed Control ---
+    const INITIAL_SPEED = 5;
+    const MAX_SPEED = 20; 
+    const SPEED_ACCELERATION_RATE = 0.001; 
+    // --- END Game Speed Control ---
+
+    // --- Infinite Mode Obstacle Spawning Control ---
+    const INITIAL_MIN_DELAY = 90;
+    const INITIAL_MAX_DELAY = 180;
+    const ABSOLUTE_MIN_DELAY = 30; 
+    const DELAY_DECREASE_RATE = 0.02; 
+    // --- END Infinite Mode Control ---
     
     // --- Global Game Variables ---
     let player, gravity, gameSpeed, obstacles, isGameOver, isLevelComplete, frames;
@@ -164,20 +177,23 @@
     let frameDelay = 0;
     let activeColors = LEVEL_SCHEMES['level1Button']; 
     let animationFrameId; 
-    let isInfiniteMode = false; // NEW FLAG
+    let isInfiniteMode = false; 
 
+    // NEW/RESTORED: Variables to track the last played mode for the Retry function
+    let lastPlayedMode = 'level'; 
+    let lastPlayedLevelKey = 'level1Button'; 
+    
     // --- New Code/Skin Variables ---
-    let activeSkin = 'default'; // 'default' or 'mrjones'
+    let activeSkin = 'default'; 
     const mrJonesImage = new Image();
-    mrJonesImage.src = 'Mr Jones.png'; // Load the image
+    // Use an absolute path if possible, or ensure the image is in the same directory as index.html
+    mrJonesImage.src = 'Mr Jones.png'; 
     // --- End New Code/Skin Variables ---
 
     // Infinite mode specific variables
     let score = 0;
     let infiniteObstacleTimer = 0;
-    const MIN_INFINITE_DELAY = 90;
-    const MAX_INFINITE_DELAY = 180;
-
+    
     // --- Player/Obstacle Properties (Unchanged) ---
     const playerWidth = 30;
     const playerHeight = 30;
@@ -186,18 +202,22 @@
     const groundY = actualGroundY - playerHeight; 
     const obstacleWidth = 20;
     
-    // --- Game Initialization (Unchanged) ---
+    // --- Game Initialization ---
     function init(mode, levelKey = null) {
         cancelAnimationFrame(animationFrameId); 
 
         isInfiniteMode = (mode === 'infinite');
         
+        // Save the current mode and key for retry
+        lastPlayedMode = mode;
+        lastPlayedLevelKey = levelKey;
+
         if (isInfiniteMode) {
             currentLevelData = [];
             currentLevelName = 'Infinite Mode';
             activeColors = LEVEL_SCHEMES['infiniteMode'];
             score = 0;
-            infiniteObstacleTimer = 120; // Initial delay
+            infiniteObstacleTimer = INITIAL_MAX_DELAY; 
         } else {
             const levelInfo = ALL_LEVELS[levelKey];
             currentLevelData = levelInfo.data;
@@ -213,7 +233,7 @@
             obstacleIndex = 0; 
         }
         
-        seed = 12345; // Reset seed for background consistency
+        seed = 12345; 
         
         player = {
             x: 100, y: groundY, width: playerWidth, height: playerHeight,
@@ -221,7 +241,7 @@
         };
 
         gravity = 0.7;
-        gameSpeed = 5;
+        gameSpeed = INITIAL_SPEED; 
         obstacles = [];
         isGameOver = false;
         isLevelComplete = false; 
@@ -234,7 +254,6 @@
                 y: seededRandom() * (actualGroundY - 100), 
                 width: seededRandom() * 50 + 20, 
                 height: (actualGroundY - 20) - (seededRandom() * 200), 
-                speed: gameSpeed * 0.3 
             });
         }
 
@@ -246,6 +265,15 @@
         gameLoop();
     }
     
+    // --- Restored Retry Function ---
+    function retryGame() {
+        if (lastPlayedMode === 'infinite') {
+            init('infinite');
+        } else if (lastPlayedLevelKey) {
+            init('level', lastPlayedLevelKey);
+        }
+    }
+
     // --- Game Loop (Unchanged) ---
     function gameLoop() {
         if (isGameOver) {
@@ -258,10 +286,11 @@
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        updateGameSpeed(); 
         drawBackground();
         drawGround();
         updatePlayer();
-        drawPlayer(); // Calls the updated drawPlayer
+        drawPlayer();
         updateObstacles(); 
         if (!isInfiniteMode) {
             checkLevelEnd(); 
@@ -272,6 +301,13 @@
         frames++;
         animationFrameId = requestAnimationFrame(gameLoop);
     }
+
+    // --- Speed Update Function (Unchanged) ---
+    function updateGameSpeed() {
+        if (gameSpeed < MAX_SPEED) {
+            gameSpeed += SPEED_ACCELERATION_RATE;
+        }
+    }
     
     // --- Core Game Functions (Omitted for brevity, content is unchanged) ---
     function updateObstacles() {
@@ -279,11 +315,9 @@
             infiniteObstacleTimer--;
 
             if (infiniteObstacleTimer <= 0) {
-                // Randomly generate obstacle
-                const height = 40 + Math.floor(Math.random() * 60); // Height between 40 and 100
-                const type = Math.random() < 0.7 ? 'spike' : 'block'; // Mostly spikes
+                const height = 40 + Math.floor(Math.random() * 60); 
+                const type = Math.random() < 0.7 ? 'spike' : 'block'; 
                 
-                // Add obstacle
                 obstacles.push({
                     x: canvas.width,
                     y: actualGroundY - height,
@@ -292,11 +326,20 @@
                     type: type
                 });
 
-                // Reset timer with a new random delay
-                infiniteObstacleTimer = MIN_INFINITE_DELAY + Math.floor(Math.random() * (MAX_INFINITE_DELAY - MIN_INFINITE_DELAY));
+                const delayReduction = frames * DELAY_DECREASE_RATE;
+
+                const minDynamicDelay = Math.max(
+                    ABSOLUTE_MIN_DELAY, 
+                    INITIAL_MIN_DELAY - delayReduction
+                );
+                
+                const delayRangeWidth = INITIAL_MAX_DELAY - INITIAL_MIN_DELAY;
+                const maxDynamicDelay = minDynamicDelay + delayRangeWidth;
+
+                infiniteObstacleTimer = minDynamicDelay + Math.floor(Math.random() * (maxDynamicDelay - minDynamicDelay));
             }
         } else {
-            // Level Mode Logic
+            // Level Mode Logic (Unchanged)
             if (frameDelay === 0 && obstacleIndex < currentLevelData.length) {
                 const [delay, height, type] = currentLevelData[obstacleIndex];
                 
@@ -323,22 +366,17 @@
         // Common movement and collision check
         for (let i = obstacles.length - 1; i >= 0; i--) {
             let obs = obstacles[i];
-            obs.x -= gameSpeed;
+            obs.x -= gameSpeed; 
             drawObstacle(obs);
-            if (checkCollision(player, obs)) {
+            if (checkCollision(player, obs)) { 
                 isGameOver = true;
             }
             if (obs.x + obs.width < 0) {
                 if (isInfiniteMode) {
-                    score++; // Increment score for passing an obstacle
+                    score++; 
                 }
                 obstacles.splice(i, 1);
             }
-        }
-        
-        // Slightly increase speed over time in infinite mode
-        if (isInfiniteMode && frames % 600 === 0 && gameSpeed < 10) { 
-             gameSpeed += 0.2;
         }
     }
     
@@ -374,13 +412,12 @@
     }
 
     function updateInfiniteScore() {
-        // In Infinite Mode, display the score (obstacles passed)
         ctx.fillStyle = 'white';
         ctx.font = '24px Arial';
         ctx.fillText('Score: ' + score, 20, 30);
     }
     
-    // --- Screen Logic (Unchanged) ---
+    // --- Screen Logic (Restored showGameOver and Updated showLevelComplete) ---
     function showLevelComplete() {
         cancelAnimationFrame(animationFrameId); 
         if (!document.getElementById('screenText')) {
@@ -390,6 +427,7 @@
             screenText.style.fontSize = '48px';
             screenText.style.textAlign = 'center';
             screenText.style.textShadow = `0 0 20px ${activeColors.playerCore}`; 
+            // Level complete still allows click/space to return to menu
             screenText.innerHTML = `${currentLevelName} COMPLETED!<br><span style="font-size: 24px;">Progress: 100%</span><br><span style="font-size: 24px;">Click or Press Space to Return to Menu</span>`;
             document.body.appendChild(screenText);
         }
@@ -400,6 +438,8 @@
         let finalScoreText;
         let finalScoreValue;
         
+        const retryText = lastPlayedMode === 'infinite' ? 'Retry Infinite' : 'Retry Level';
+
         if (isInfiniteMode) {
             finalScoreValue = score;
             finalScoreText = `Score: ${finalScoreValue}`;
@@ -414,8 +454,21 @@
             screenText.style.color = 'white';
             screenText.style.fontSize = '48px';
             screenText.style.textAlign = 'center';
-            screenText.innerHTML = `Game Over!<br>${finalScoreText}<br><span style="font-size: 24px;">Click or Press Space to Return to Menu</span>`;
+            
+            // CORRECT HTML STRUCTURE FOR BUTTONS
+            screenText.innerHTML = `
+                Game Over!<br>
+                <span style="font-size: 24px;">${finalScoreText}</span>
+                <div id="gameOverButtons" style="margin-top: 20px;">
+                    <div id="retryButton" class="menu-button">${retryText}</div>
+                    <div id="menuButton" class="menu-button">Return to Menu</div>
+                </div>
+            `;
             document.body.appendChild(screenText);
+            
+            // Add listeners for the new buttons
+            document.getElementById('retryButton').addEventListener('click', retryGame);
+            document.getElementById('menuButton').addEventListener('click', showMainMenu);
         }
     }
     
@@ -426,11 +479,12 @@
         }
     }
     
-    // --- DRAWING FUNCTIONS (MODIFIED) ---
+    // --- DRAWING FUNCTIONS (Unchanged) ---
     function drawBackground() {
+        const parallaxSpeed = gameSpeed * 0.3; 
         ctx.fillStyle = activeColors.bgSecondary; 
         for (let obj of backgroundObjects) {
-            obj.x -= obj.speed;
+            obj.x -= parallaxSpeed; 
             ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
             if (obj.x + obj.width < 0) {
                 obj.x = canvas.width;
@@ -494,21 +548,69 @@
             ctx.fill();
         }
     }
+    
+    // --- Collision Functions (Omitted for brevity, content is unchanged) ---
+    function pointInTriangle(px, py, t1x, t1y, t2x, t2y, t3x, t3y) {
+        function sign(p1x, p1y, p2x, p2y, p3x, p3y) {
+            return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
+        }
+
+        const d1 = sign(px, py, t1x, t1y, t2x, t2y);
+        const d2 = sign(px, py, t2x, t2y, t3x, t3y);
+        const d3 = sign(px, py, t3x, t3y, t1x, t1y);
+
+        const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+        const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+        return !(has_neg && has_pos);
+    }
 
     function checkCollision(player, obstacle) {
-        // ... (Unchanged)
-        return (
+        if (!(
             player.x < obstacle.x + obstacle.width &&
             player.x + player.width > obstacle.x &&
             player.y < obstacle.y + obstacle.height &&
             player.y + player.height > obstacle.y
-        );
+        )) {
+            return false;
+        }
+
+        if (obstacle.type === 'block') {
+            return true;
+        } 
+        
+        if (obstacle.type === 'spike') {
+            const v1x = obstacle.x;
+            const v1y = obstacle.y + obstacle.height;
+            const v2x = obstacle.x + obstacle.width / 2;
+            const v2y = obstacle.y;
+            const v3x = obstacle.x + obstacle.width;
+            const v3y = obstacle.y + obstacle.height;
+
+            const playerCorners = [
+                {x: player.x, y: player.y}, 
+                {x: player.x + player.width, y: player.y}, 
+                {x: player.x, y: player.y + player.height}, 
+                {x: player.x + player.width, y: player.y + player.height} 
+            ];
+
+            for (const corner of playerCorners) {
+                if (pointInTriangle(corner.x, corner.y, v1x, v1y, v2x, v2y, v3x, v3y)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        return false; 
     }
     
-    // --- Menu Logic and Event Listeners (Updated) ---
+    // --- Menu Logic and Event Listeners (FIXED INITIALIZATION) ---
     const mainMenu = document.getElementById('mainMenu');
     const levelSelectMenu = document.getElementById('levelSelect');
-    const codeMenu = document.getElementById('codeMenu'); // New
+    // FIX: Ensure codeMenu is retrieved from the DOM
+    const codeMenu = document.getElementById('codeMenu'); 
     const instructions = document.getElementById('instructions');
 
     function showMainMenu() {
@@ -516,7 +618,7 @@
 
         mainMenu.style.display = 'block'; 
         levelSelectMenu.style.display = 'none';
-        codeMenu.style.display = 'none'; // New
+        codeMenu.style.display = 'none'; // Ensure the code menu is hidden
         canvas.style.display = 'none';
         instructions.style.display = 'none';
         
@@ -526,9 +628,15 @@
         if (screenText) {
             screenText.remove();
         }
+        
+        // Remove listeners for Game Over buttons to prevent multiple attachments
+        const retryBtn = document.getElementById('retryButton');
+        const menuBtn = document.getElementById('menuButton');
+        if (retryBtn) retryBtn.removeEventListener('click', retryGame);
+        if (menuBtn) menuBtn.removeEventListener('click', showMainMenu);
     }
 
-    // --- CODE MENU LOGIC (New) ---
+    // --- CODE MENU LOGIC ---
     function showCodeMenu() {
         cancelAnimationFrame(animationFrameId);
         mainMenu.style.display = 'none';
@@ -564,45 +672,42 @@
         }
     }
     // --- END CODE MENU LOGIC ---
-
-
-    // *** ATTACH LISTENERS (UPDATED) ***
     
     document.addEventListener('click', (e) => {
         const targetId = e.target.id;
         
         if (targetId === 'levelsButton') {
-            // New "Levels" button action
             mainMenu.style.display = 'none';
             levelSelectMenu.style.display = 'flex'; 
         } else if (targetId === 'infiniteButton') {
-            // New "Infinite" button action
             init('infinite');
             mainMenu.style.display = 'none';
             canvas.style.display = 'block'; 
             instructions.style.display = 'block'; 
-        } else if (targetId === 'codeButton') { // New Code Button
+        } else if (targetId === 'codeButton') { 
+            // FIX: This now works because codeMenu is initialized
             showCodeMenu();
-        } else if (targetId === 'codeSubmitButton') { // Code Submit Button
+        } else if (targetId === 'codeSubmitButton') { 
             checkCode();
-        } else if (targetId === 'codeMenuBackButton') { // Code Menu Back Button
+        } else if (targetId === 'codeMenuBackButton') { 
             showMainMenu();
         } else if (e.target.classList.contains('level-button')) {
-            // Level button action
             init('level', targetId);
             levelSelectMenu.style.display = 'none';
             canvas.style.display = 'block'; 
             instructions.style.display = 'block'; 
         } 
-        else if ((isGameOver || isLevelComplete) && document.getElementById('screenText')) {
-            // Game Over/Level Complete screen click to return to menu
+        // Only allow click-to-return-to-menu if the level is complete
+        else if (isLevelComplete && document.getElementById('screenText')) { 
             showMainMenu();
         }
+        // Note: Game Over buttons (retryButton, menuButton) are handled by listeners in showGameOver()
     });
 
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space') {
-            if (isGameOver || isLevelComplete) {
+            // Only allow space-to-return-to-menu if the level is complete
+            if (isLevelComplete) { 
                 showMainMenu(); 
             } else if (canvas.style.display === 'block') {
                 handleInput(); 
