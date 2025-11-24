@@ -14,7 +14,7 @@
     }
     // --- END SEEDING ---
 
-    // --- COLOR SCHEMES (unchanged for brevity) ---
+    // --- COLOR SCHEMES ---
     const LEVEL_SCHEMES = {
         'level1Button': { 
             bgPrimary: '#222', bgSecondary: '#555', ground: '#FFFFFF', 
@@ -66,21 +66,21 @@
             playerCore: '#FFFFFF', playerAccent: '#CCCCCC',
             obsPrimary: '#8B4513', obsAccent: '#5C2D0D'
         },
-        'infiniteMode': { 
+        'infiniteMode': { // New scheme for Infinite Mode
             bgPrimary: '#000033', bgSecondary: '#000055', ground: '#00CCFF',
             playerCore: '#FFD700', playerAccent: '#CCAA00',
             obsPrimary: '#FF4500', obsAccent: '#CC3700'
         }
     };
 
-    // --- LEVEL DEFINITIONS (unchanged for brevity) ---
+    // --- LEVEL DEFINITIONS ---
     const levelData1 = [
         [0, 50, 'spike'], [120, 70, 'block'], [150, 40, 'spike'], [100, 100, 'block'], 
         [200, 60, 'spike'], [100, 80, 'block'], [120, 50, 'spike'], [200, 50, 'spike'], 
         [100, 70, 'block'], [150, 40, 'spike'], [100, 100, 'block'], [200, 60, 'spike'], 
         [100, 80, 'block'], [120, 50, 'spike'], [200, 50, 'spike'], [500, 0, 'END']
     ];
-    // ... (levelData2 through levelData10 definitions omitted for brevity) ...
+    
     const levelData2 = [
         [0, 20, 'block'], [80, 20, 'block'], [80, 20, 'block'], [200, 80, 'spike'], 
         [100, 40, 'spike'], [100, 40, 'spike'], [250, 60, 'block'], [120, 40, 'spike'], 
@@ -164,23 +164,14 @@
     let frameDelay = 0;
     let activeColors = LEVEL_SCHEMES['level1Button']; 
     let animationFrameId; 
-    let isInfiniteMode = false;
+    let isInfiniteMode = false; 
 
     // Infinite mode specific variables
     let score = 0;
     let infiniteObstacleTimer = 0;
     const MIN_INFINITE_DELAY = 90;
     const MAX_INFINITE_DELAY = 180;
-    
-    // --- Skin/Image Variables (RE-INTRODUCED SAFELY) ---
-    let activeSkin = 'default'; 
-    const mrJonesImage = new Image();
-    mrJonesImage.src = 'Mr Jones.png'; 
-    let mrJonesLoaded = false;
-    
-    mrJonesImage.onload = () => { mrJonesLoaded = true; };
-    mrJonesImage.onerror = () => { console.error("Failed to load Mr Jones.png. Skin will not be used."); mrJonesLoaded = false; };
-    
+
     // --- Player/Obstacle Properties (Unchanged) ---
     const playerWidth = 30;
     const playerHeight = 30;
@@ -200,7 +191,7 @@
             currentLevelName = 'Infinite Mode';
             activeColors = LEVEL_SCHEMES['infiniteMode'];
             score = 0;
-            infiniteObstacleTimer = 120; 
+            infiniteObstacleTimer = 120; // Initial delay
         } else {
             const levelInfo = ALL_LEVELS[levelKey];
             currentLevelData = levelInfo.data;
@@ -216,7 +207,7 @@
             obstacleIndex = 0; 
         }
         
-        seed = 12345; 
+        seed = 12345; // Reset seed for background consistency
         
         player = {
             x: 100, y: groundY, width: playerWidth, height: playerHeight,
@@ -249,49 +240,44 @@
         gameLoop();
     }
     
-    // --- Game Loop (NOW WITH TRY/CATCH FOR STABILITY) ---
+    // --- Game Loop ---
     function gameLoop() {
-        try {
-            if (isGameOver) {
-                showGameOver();
-                return;
-            }
-            if (isLevelComplete) {
-                showLevelComplete();
-                return;
-            }
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-            drawGround();
-            updatePlayer();
-            drawPlayer();
-            updateObstacles(); 
-            if (!isInfiniteMode) {
-                checkLevelEnd(); 
-                updateProgressScore(); 
-            } else {
-                updateInfiniteScore();
-            }
-            frames++;
-            animationFrameId = requestAnimationFrame(gameLoop);
-        } catch (error) {
-            // Log the error and safely trigger Game Over to unstick the game
-            console.error("Critical Game Loop Error (Likely Rendering Failure):", error);
-            isGameOver = true; 
+        if (isGameOver) {
             showGameOver();
+            return;
         }
+        if (isLevelComplete) {
+            showLevelComplete();
+            return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+        drawGround();
+        updatePlayer();
+        drawPlayer();
+        updateObstacles(); 
+        if (!isInfiniteMode) {
+            checkLevelEnd(); 
+            updateProgressScore(); 
+        } else {
+            updateInfiniteScore();
+        }
+        frames++;
+        animationFrameId = requestAnimationFrame(gameLoop);
     }
     
-    // --- Core Game Functions (unchanged for brevity) ---
+    // --- Core Game Functions (MODIFIED FOR INFINITE MODE) ---
     function updateObstacles() {
         if (isInfiniteMode) {
             infiniteObstacleTimer--;
 
             if (infiniteObstacleTimer <= 0) {
-                const height = 40 + Math.floor(Math.random() * 60);
-                const type = Math.random() < 0.7 ? 'spike' : 'block';
+                // Randomly generate obstacle
+                const height = 40 + Math.floor(Math.random() * 60); // Height between 40 and 100
+                const type = Math.random() < 0.7 ? 'spike' : 'block'; // Mostly spikes
                 
+                // Add obstacle
                 obstacles.push({
                     x: canvas.width,
                     y: actualGroundY - height,
@@ -300,6 +286,7 @@
                     type: type
                 });
 
+                // Reset timer with a new random delay
                 infiniteObstacleTimer = MIN_INFINITE_DELAY + Math.floor(Math.random() * (MAX_INFINITE_DELAY - MIN_INFINITE_DELAY));
             }
         } else {
@@ -332,17 +319,18 @@
             let obs = obstacles[i];
             obs.x -= gameSpeed;
             drawObstacle(obs);
-            if (checkCollision(player, obs)) {
+            if (checkCollision(player, obs)) { // CALLS NEW checkCollision
                 isGameOver = true;
             }
             if (obs.x + obs.width < 0) {
                 if (isInfiniteMode) {
-                    score++; 
+                    score++; // Increment score for passing an obstacle
                 }
                 obstacles.splice(i, 1);
             }
         }
         
+        // Slightly increase speed over time in infinite mode
         if (isInfiniteMode && frames % 600 === 0 && gameSpeed < 10) { 
              gameSpeed += 0.2;
         }
@@ -365,7 +353,7 @@
         }
     }
     
-    // --- Score / Progress Functions (unchanged for brevity) ---
+    // --- Score / Progress Functions ---
     function updateProgressScore() {
         let progress;
         if (isLevelComplete) {
@@ -380,12 +368,13 @@
     }
 
     function updateInfiniteScore() {
+        // In Infinite Mode, display the score (obstacles passed)
         ctx.fillStyle = 'white';
         ctx.font = '24px Arial';
         ctx.fillText('Score: ' + score, 20, 30);
     }
     
-    // --- Screen Logic (unchanged for brevity) ---
+    // --- Screen Logic ---
     function showLevelComplete() {
         cancelAnimationFrame(animationFrameId); 
         if (!document.getElementById('screenText')) {
@@ -431,7 +420,7 @@
         }
     }
     
-    // --- DRAWING FUNCTIONS (UPDATED drawPlayer) ---
+    // --- DRAWING FUNCTIONS (Unchanged) ---
     function drawBackground() {
         ctx.fillStyle = activeColors.bgSecondary; 
         for (let obj of backgroundObjects) {
@@ -454,26 +443,14 @@
     }
 
     function drawPlayer() {
-        // This logic is now safer. Since activeSkin is 'default' and there's no way to change it in your index.html, 
-        // it will always execute the default square drawing, avoiding potential errors from image loading.
-        if (activeSkin === 'mrjones' && mrJonesLoaded) {
-            // Draw the Mr Jones image (using fixed dimensions for stability)
-            const imgWidth = 70; 
-            const imgHeight = 70;
-            const drawX = player.x + player.width / 2 - imgWidth / 2;
-            const drawY = player.y + player.height - imgHeight; 
-            ctx.drawImage(mrJonesImage, drawX, drawY, imgWidth, imgHeight);
-        } else {
-            // Draw the default player skin
-            ctx.fillStyle = activeColors.playerAccent; 
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-            ctx.fillStyle = activeColors.playerCore; 
-            ctx.fillRect(player.x + 4, player.y + 4, player.width - 8, player.height - 8);
-            ctx.fillStyle = 'white'; 
-            ctx.fillRect(player.x + 10, player.y + 8, 12, 8);
-            ctx.fillStyle = 'black'; 
-            ctx.fillRect(player.x + 18, player.y + 10, 4, 4);
-        }
+        ctx.fillStyle = activeColors.playerAccent; 
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        ctx.fillStyle = activeColors.playerCore; 
+        ctx.fillRect(player.x + 4, player.y + 4, player.width - 8, player.height - 8);
+        ctx.fillStyle = 'white'; 
+        ctx.fillRect(player.x + 10, player.y + 8, 12, 8);
+        ctx.fillStyle = 'black'; 
+        ctx.fillRect(player.x + 18, player.y + 10, 4, 4);
     }
     
     function drawObstacle(obs) {
@@ -499,17 +476,84 @@
             ctx.fill();
         }
     }
+    
+    // --- New/Updated Collision Function ---
+    // Helper function to check if a point (px, py) is inside a triangle (t1, t2, t3)
+    // Uses the Barycentric coordinate system check (sign method)
+    function pointInTriangle(px, py, t1x, t1y, t2x, t2y, t3x, t3y) {
+        // Calculate sign of (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3)
+        function sign(p1x, p1y, p2x, p2y, p3x, p3y) {
+            return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
+        }
+
+        const d1 = sign(px, py, t1x, t1y, t2x, t2y);
+        const d2 = sign(px, py, t2x, t2y, t3x, t3y);
+        const d3 = sign(px, py, t3x, t3y, t1x, t1y);
+
+        const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+        const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+        // Point is in triangle if signs are the same (or zero)
+        return !(has_neg && has_pos);
+    }
 
     function checkCollision(player, obstacle) {
-        return (
+        // 1. Initial broad-phase AABB check for quick exit (still required for both types)
+        if (!(
             player.x < obstacle.x + obstacle.width &&
             player.x + player.width > obstacle.x &&
             player.y < obstacle.y + obstacle.height &&
             player.y + player.height > obstacle.y
-        );
+        )) {
+            return false;
+        }
+
+        // 2. Fine-phase check based on obstacle type
+        if (obstacle.type === 'block') {
+            // AABB is sufficient for blocks
+            return true;
+        } 
+        
+        if (obstacle.type === 'spike') {
+            // A spike is a triangle with vertices:
+            // V1: (obs.x, obs.y + obs.height) - Bottom-Left
+            // V2: (obs.x + obs.width / 2, obs.y) - Top-Middle (Tip)
+            // V3: (obs.x + obs.width, obs.y + obs.height) - Bottom-Right
+
+            const v1x = obstacle.x;
+            const v1y = obstacle.y + obstacle.height;
+            const v2x = obstacle.x + obstacle.width / 2;
+            const v2y = obstacle.y;
+            const v3x = obstacle.x + obstacle.width;
+            const v3y = obstacle.y + obstacle.height;
+
+            // Check if any of the 4 corners of the player box are inside the triangle
+            const playerCorners = [
+                {x: player.x, y: player.y}, // Top-Left
+                {x: player.x + player.width, y: player.y}, // Top-Right
+                {x: player.x, y: player.y + player.height}, // Bottom-Left
+                {x: player.x + player.width, y: player.y + player.height} // Bottom-Right
+            ];
+
+            for (const corner of playerCorners) {
+                if (pointInTriangle(corner.x, corner.y, v1x, v1y, v2x, v2y, v3x, v3y)) {
+                    return true;
+                }
+            }
+            
+            // Note: This basic check (corners only) is a good performance trade-off 
+            // for a small player colliding with a large spike. For a more robust check,
+            // you'd also check if any of the spike's edges intersect the player's AABB.
+            // For now, checking player corners against the spike triangle is a good, 
+            // more accurate replacement for the spike's AABB.
+
+            return false;
+        }
+
+        return false; // Should not be reached
     }
     
-    // --- Menu Logic and Event Listeners (unchanged for brevity) ---
+    // --- Menu Logic and Event Listeners (Updated) ---
     const mainMenu = document.getElementById('mainMenu');
     const levelSelectMenu = document.getElementById('levelSelect');
     const instructions = document.getElementById('instructions');
@@ -530,26 +574,30 @@
         }
     }
 
-    // *** ATTACH LISTENERS ***
+    // *** ATTACH LISTENERS (UPDATED) ***
     
     document.addEventListener('click', (e) => {
         const targetId = e.target.id;
         
         if (targetId === 'levelsButton') {
+            // New "Levels" button action
             mainMenu.style.display = 'none';
             levelSelectMenu.style.display = 'flex'; 
         } else if (targetId === 'infiniteButton') {
+            // New "Infinite" button action
             init('infinite');
             mainMenu.style.display = 'none';
             canvas.style.display = 'block'; 
             instructions.style.display = 'block'; 
         } else if (e.target.classList.contains('level-button')) {
+            // Level button action
             init('level', targetId);
             levelSelectMenu.style.display = 'none';
             canvas.style.display = 'block'; 
             instructions.style.display = 'block'; 
         } 
         else if ((isGameOver || isLevelComplete) && document.getElementById('screenText')) {
+            // Game Over/Level Complete screen click to return to menu
             showMainMenu();
         }
     });
