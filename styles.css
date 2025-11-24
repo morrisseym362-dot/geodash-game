@@ -110,3 +110,16 @@ canvas {
     width: 80%; 
     max-width: 400px;
 }
+
+/* --- NEW STYLES for Game Over Buttons --- */
+#gameOverButtons {
+    display: flex;
+    justify-content: space-around; /* Distributes space around buttons */
+    gap: 10px;
+    padding: 0 10px;
+}
+#gameOverButtons .menu-button {
+    flex-grow: 1; /* Make buttons take equal space */
+    font-size: clamp(0.9em, 4vw, 1.2em); /* Smaller font size to fit both buttons */
+    margin: 0; /* Remove excess margin from default menu-button */
+}
