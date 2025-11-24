@@ -134,7 +134,7 @@
     ];
 
     const ALL_LEVELS = {
-        'level1Button': { data: levelData1, name: 'Level 1', number: 1 }, // ADDED level number
+        'level1Button': { data: levelData1, name: 'Level 1', number: 1 }, 
         'level2Button': { data: levelData2, name: 'Level 2', number: 2 },
         'level3Button': { data: levelData3, name: 'Level 3', number: 3 },
         'level4Button': { data: levelData4, name: 'Level 4', number: 4 },
@@ -167,17 +167,21 @@
     let isInfiniteMode = false; 
 
     // --- SPEED CONSTANTS FOR PROGRESSION ---
-    const BASE_SPEED = 5; // Starting speed for Level 1 and Infinite Mode
-    const LEVEL_SPEED_INCREMENT = 0.3; // Speed added per level (Level 2 is BASE_SPEED + 0.3)
-    const INFINITE_SPEED_UP_INTERVAL = 400; // Increase speed every X frames in Infinite Mode
-    const INFINITE_SPEED_UP_AMOUNT = 0.1; // Amount to increase speed by
+    const BASE_SPEED = 5; 
+    const LEVEL_SPEED_INCREMENT = 0.3; 
+    const INFINITE_SPEED_UP_INTERVAL = 400; 
+    const INFINITE_SPEED_UP_AMOUNT = 0.1; 
+    
+    // --- INFINITE MODE OBSTACLE TIMING CONSTANTS (NEW) ---
+    const BASE_MIN_DELAY = 90; // Starting minimum gap (frames)
+    const BASE_MAX_DELAY = 180; // Starting maximum gap (frames)
+    const MIN_POSSIBLE_DELAY = 45; // Absolute minimum gap limit
+    const DELAY_REDUCTION_PER_SCORE = 1; // Frames reduced from delay range per obstacle passed
     
     // Infinite mode specific variables
     let score = 0;
     let infiniteObstacleTimer = 0;
-    const MIN_INFINITE_DELAY = 90;
-    const MAX_INFINITE_DELAY = 180;
-
+    
     // --- Player/Obstacle Properties (Unchanged) ---
     const playerWidth = 30;
     const playerHeight = 30;
@@ -186,7 +190,7 @@
     const groundY = actualGroundY - playerHeight; 
     const obstacleWidth = 20;
     
-    // --- Game Initialization (MODIFIED) ---
+    // --- Game Initialization (Unchanged) ---
     function init(mode, levelKey = null) {
         cancelAnimationFrame(animationFrameId); 
 
@@ -198,7 +202,7 @@
             activeColors = LEVEL_SCHEMES['infiniteMode'];
             score = 0;
             infiniteObstacleTimer = 120; // Initial delay
-            gameSpeed = BASE_SPEED; // Start infinite mode at base speed
+            gameSpeed = BASE_SPEED; 
         } else {
             const levelInfo = ALL_LEVELS[levelKey];
             currentLevelData = levelInfo.data;
@@ -219,7 +223,7 @@
             obstacleIndex = 0; 
         }
         
-        seed = 12345; // Reset seed for background consistency
+        seed = 12345; 
         
         player = {
             x: 100, y: groundY, width: playerWidth, height: playerHeight,
@@ -227,7 +231,6 @@
         };
 
         gravity = 0.7;
-        // gameSpeed is set above based on mode/level
         obstacles = [];
         isGameOver = false;
         isLevelComplete = false; 
@@ -240,7 +243,7 @@
                 y: seededRandom() * (actualGroundY - 100), 
                 width: seededRandom() * 50 + 20, 
                 height: (actualGroundY - 20) - (seededRandom() * 200), 
-                speed: gameSpeed * 0.3 // Initial speed for background objects
+                speed: gameSpeed * 0.3 
             });
         }
 
@@ -279,15 +282,24 @@
         animationFrameId = requestAnimationFrame(gameLoop);
     }
     
-    // --- Core Game Functions (MODIFIED FOR INFINITE MODE SPEED UP) ---
+    // --- Core Game Functions (MODIFIED OBSTACLE GENERATION) ---
     function updateObstacles() {
         if (isInfiniteMode) {
             infiniteObstacleTimer--;
 
+            // --- DYNAMIC OBSTACLE SPACING LOGIC (NEW) ---
+            const reduction = score * DELAY_REDUCTION_PER_SCORE;
+            
+            // Calculate dynamic min and max delays, ensuring they don't fall below the hard limit
+            const currentMinDelay = Math.max(BASE_MIN_DELAY - reduction, MIN_POSSIBLE_DELAY);
+            // Ensure max delay is always slightly greater than min delay for a range
+            const currentMaxDelay = Math.max(BASE_MAX_DELAY - reduction, MIN_POSSIBLE_DELAY + 10); 
+            // ----------------------------------------------
+
             if (infiniteObstacleTimer <= 0) {
                 // Randomly generate obstacle
-                const height = 40 + Math.floor(Math.random() * 60); // Height between 40 and 100
-                const type = Math.random() < 0.7 ? 'spike' : 'block'; // Mostly spikes
+                const height = 40 + Math.floor(Math.random() * 60); 
+                const type = Math.random() < 0.7 ? 'spike' : 'block'; 
                 
                 // Add obstacle
                 obstacles.push({
@@ -298,11 +310,12 @@
                     type: type
                 });
 
-                // Reset timer with a new random delay
-                infiniteObstacleTimer = MIN_INFINITE_DELAY + Math.floor(Math.random() * (MAX_INFINITE_DELAY - MIN_INFINITE_DELAY));
+                // Reset timer with a new random delay within the calculated dynamic range
+                const delayRange = currentMaxDelay - currentMinDelay;
+                infiniteObstacleTimer = currentMinDelay + Math.floor(Math.random() * delayRange);
             }
-
-            // Continuous speed increase logic for Infinite Mode
+            
+            // Continuous speed increase logic for Infinite Mode (Unchanged)
             if (frames % INFINITE_SPEED_UP_INTERVAL === 0) { 
                  gameSpeed += INFINITE_SPEED_UP_AMOUNT;
             }
@@ -336,7 +349,7 @@
             let obs = obstacles[i];
             obs.x -= gameSpeed;
             drawObstacle(obs);
-            if (checkCollision(player, obs)) { // CALLS NEW checkCollision
+            if (checkCollision(player, obs)) { 
                 isGameOver = true;
             }
             if (obs.x + obs.width < 0) {
@@ -346,8 +359,6 @@
                 obstacles.splice(i, 1);
             }
         }
-        
-        // The old speed-up logic for infinite mode is now inside the if (isInfiniteMode) block above
     }
     
     function checkLevelEnd() {
@@ -367,7 +378,7 @@
         }
     }
     
-    // --- Score / Progress Functions (MODIFIED to show speed) ---
+    // --- Score / Progress Functions (Unchanged) ---
     function updateProgressScore() {
         let progress;
         if (isLevelComplete) {
@@ -391,7 +402,7 @@
         ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}`, canvas.width - 150, 30);
     }
     
-    // --- Screen Logic (MODIFIED to include final speed) ---
+    // --- Screen Logic (Unchanged) ---
     function showLevelComplete() {
         cancelAnimationFrame(animationFrameId); 
         if (!document.getElementById('screenText')) {
@@ -437,7 +448,7 @@
         }
     }
     
-    // --- DRAWING FUNCTIONS (MODIFIED to use dynamic speed for background objects) ---
+    // --- DRAWING FUNCTIONS (Unchanged) ---
     function drawBackground() {
         ctx.fillStyle = activeColors.bgSecondary; 
         for (let obj of backgroundObjects) {
@@ -497,8 +508,7 @@
         }
     }
     
-    // --- New/Updated Collision Function (Unchanged) ---
-    // Helper function to check if a point (px, py) is inside a triangle (t1, t2, t3)
+    // --- Collision Function (Unchanged) ---
     function pointInTriangle(px, py, t1x, t1y, t2x, t2y, t3x, t3y) {
         function sign(p1x, p1y, p2x, p2y, p3x, p3y) {
             return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
@@ -506,7 +516,7 @@
 
         const d1 = sign(px, py, t1x, t1y, t2x, t2y);
         const d2 = sign(px, py, t2x, t2y, t3x, t3y);
-        const d3 = sign(px, py, t3x, t3y, t1x, t1y);
+        const d3 = sign(sign, py, t3x, t3y, t1x, t1y);
 
         const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
         const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
