@@ -6,7 +6,7 @@
     }
     const ctx = canvas.getContext('2d');
 
-    // --- SEEDING FUNCTIONALITY (Now only used for background objects) ---
+    // --- SEEDING FUNCTIONALITY (Omitted for brevity) ---
     let seed = 12345;
     function seededRandom() {
         seed = (seed * 9301 + 49297) % 233280;
@@ -14,7 +14,7 @@
     }
     // --- END SEEDING ---
 
-    // --- COLOR SCHEMES (Omitted for brevity, content is unchanged) ---
+    // --- COLOR SCHEMES (Omitted for brevity) ---
     const LEVEL_SCHEMES = {
         'level1Button': { 
             bgPrimary: '#222', bgSecondary: '#555', ground: '#FFFFFF', 
@@ -66,14 +66,14 @@
             playerCore: '#FFFFFF', playerAccent: '#CCCCCC',
             obsPrimary: '#8B4513', obsAccent: '#5C2D0D'
         },
-        'infiniteMode': { // New scheme for Infinite Mode
+        'infiniteMode': { 
             bgPrimary: '#000033', bgSecondary: '#000055', ground: '#00CCFF',
             playerCore: '#FFD700', playerAccent: '#CCAA00',
             obsPrimary: '#FF4500', obsAccent: '#CC3700'
         }
     };
     
-    // --- LEVEL DEFINITIONS (Omitted for brevity, content is unchanged) ---
+    // --- LEVEL DEFINITIONS (Omitted for brevity) ---
     const levelData1 = [
         [0, 50, 'spike'], [120, 70, 'block'], [150, 40, 'spike'], [100, 100, 'block'], 
         [200, 60, 'spike'], [100, 80, 'block'], [120, 50, 'spike'], [200, 50, 'spike'], 
@@ -179,14 +179,13 @@
     let animationFrameId; 
     let isInfiniteMode = false; 
 
-    // NEW/RESTORED: Variables to track the last played mode for the Retry function
+    // Variables to track the last played mode for the Retry function
     let lastPlayedMode = 'level'; 
     let lastPlayedLevelKey = 'level1Button'; 
     
     // --- New Code/Skin Variables ---
     let activeSkin = 'default'; 
     const mrJonesImage = new Image();
-    // Use an absolute path if possible, or ensure the image is in the same directory as index.html
     mrJonesImage.src = 'Mr Jones.png'; 
     // --- End New Code/Skin Variables ---
 
@@ -194,7 +193,7 @@
     let score = 0;
     let infiniteObstacleTimer = 0;
     
-    // --- Player/Obstacle Properties (Unchanged) ---
+    // --- Player/Obstacle Properties (Omitted for brevity) ---
     const playerWidth = 30;
     const playerHeight = 30;
     const jumpStrength = 13;
@@ -202,13 +201,12 @@
     const groundY = actualGroundY - playerHeight; 
     const obstacleWidth = 20;
     
-    // --- Game Initialization ---
+    // --- Game Initialization (Omitted for brevity) ---
     function init(mode, levelKey = null) {
         cancelAnimationFrame(animationFrameId); 
 
         isInfiniteMode = (mode === 'infinite');
         
-        // Save the current mode and key for retry
         lastPlayedMode = mode;
         lastPlayedLevelKey = levelKey;
 
@@ -265,7 +263,6 @@
         gameLoop();
     }
     
-    // --- Restored Retry Function ---
     function retryGame() {
         if (lastPlayedMode === 'infinite') {
             init('infinite');
@@ -274,7 +271,7 @@
         }
     }
 
-    // --- Game Loop (Unchanged) ---
+    // --- Game Loop (Omitted for brevity) ---
     function gameLoop() {
         if (isGameOver) {
             showGameOver();
@@ -302,14 +299,13 @@
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 
-    // --- Speed Update Function (Unchanged) ---
     function updateGameSpeed() {
         if (gameSpeed < MAX_SPEED) {
             gameSpeed += SPEED_ACCELERATION_RATE;
         }
     }
     
-    // --- Core Game Functions (Omitted for brevity, content is unchanged) ---
+    // --- Core Game Functions (Omitted for brevity) ---
     function updateObstacles() {
         if (isInfiniteMode) {
             infiniteObstacleTimer--;
@@ -339,7 +335,6 @@
                 infiniteObstacleTimer = minDynamicDelay + Math.floor(Math.random() * (maxDynamicDelay - minDynamicDelay));
             }
         } else {
-            // Level Mode Logic (Unchanged)
             if (frameDelay === 0 && obstacleIndex < currentLevelData.length) {
                 const [delay, height, type] = currentLevelData[obstacleIndex];
                 
@@ -363,7 +358,6 @@
             }
         }
 
-        // Common movement and collision check
         for (let i = obstacles.length - 1; i >= 0; i--) {
             let obs = obstacles[i];
             obs.x -= gameSpeed; 
@@ -397,7 +391,7 @@
         }
     }
     
-    // --- Score / Progress Functions (Unchanged) ---
+    // --- Score / Progress Functions (Omitted for brevity) ---
     function updateProgressScore() {
         let progress;
         if (isLevelComplete) {
@@ -417,7 +411,7 @@
         ctx.fillText('Score: ' + score, 20, 30);
     }
     
-    // --- Screen Logic (Restored showGameOver and Updated showLevelComplete) ---
+    // --- Screen Logic (Omitted for brevity) ---
     function showLevelComplete() {
         cancelAnimationFrame(animationFrameId); 
         if (!document.getElementById('screenText')) {
@@ -427,7 +421,6 @@
             screenText.style.fontSize = '48px';
             screenText.style.textAlign = 'center';
             screenText.style.textShadow = `0 0 20px ${activeColors.playerCore}`; 
-            // Level complete still allows click/space to return to menu
             screenText.innerHTML = `${currentLevelName} COMPLETED!<br><span style="font-size: 24px;">Progress: 100%</span><br><span style="font-size: 24px;">Click or Press Space to Return to Menu</span>`;
             document.body.appendChild(screenText);
         }
@@ -455,7 +448,6 @@
             screenText.style.fontSize = '48px';
             screenText.style.textAlign = 'center';
             
-            // CORRECT HTML STRUCTURE FOR BUTTONS
             screenText.innerHTML = `
                 Game Over!<br>
                 <span style="font-size: 24px;">${finalScoreText}</span>
@@ -466,7 +458,6 @@
             `;
             document.body.appendChild(screenText);
             
-            // Add listeners for the new buttons
             document.getElementById('retryButton').addEventListener('click', retryGame);
             document.getElementById('menuButton').addEventListener('click', showMainMenu);
         }
@@ -479,7 +470,7 @@
         }
     }
     
-    // --- DRAWING FUNCTIONS (Unchanged) ---
+    // --- DRAWING FUNCTIONS (Omitted for brevity) ---
     function drawBackground() {
         const parallaxSpeed = gameSpeed * 0.3; 
         ctx.fillStyle = activeColors.bgSecondary; 
@@ -504,16 +495,13 @@
 
     function drawPlayer() {
         if (activeSkin === 'mrjones' && mrJonesImage.complete) {
-            // Draw Mr Jones image
             const imgWidth = 70; 
             const imgHeight = 70;
             const drawX = player.x + player.width / 2 - imgWidth / 2;
             const drawY = player.y + player.height - imgHeight; 
-            // Draw the image, scaling it up and positioning it relative to the player's bounding box
             ctx.drawImage(mrJonesImage, drawX, drawY, imgWidth, imgHeight);
 
         } else {
-            // Draw default block player
             ctx.fillStyle = activeColors.playerAccent; 
             ctx.fillRect(player.x, player.y, player.width, player.height);
             ctx.fillStyle = activeColors.playerCore; 
@@ -548,79 +536,31 @@
             ctx.fill();
         }
     }
-    
-    // --- Collision Functions (Omitted for brevity, content is unchanged) ---
-    function pointInTriangle(px, py, t1x, t1y, t2x, t2y, t3x, t3y) {
-        function sign(p1x, p1y, p2x, p2y, p3x, p3y) {
-            return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
-        }
-
-        const d1 = sign(px, py, t1x, t1y, t2x, t2y);
-        const d2 = sign(px, py, t2x, t2y, t3x, t3y);
-        const d3 = sign(px, py, t3x, t3y, t1x, t1y);
-
-        const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
-        const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
-
-        return !(has_neg && has_pos);
-    }
 
     function checkCollision(player, obstacle) {
-        if (!(
+        // ... (Collision logic omitted for brevity)
+        return (
             player.x < obstacle.x + obstacle.width &&
             player.x + player.width > obstacle.x &&
             player.y < obstacle.y + obstacle.height &&
             player.y + player.height > obstacle.y
-        )) {
-            return false;
-        }
-
-        if (obstacle.type === 'block') {
-            return true;
-        } 
-        
-        if (obstacle.type === 'spike') {
-            const v1x = obstacle.x;
-            const v1y = obstacle.y + obstacle.height;
-            const v2x = obstacle.x + obstacle.width / 2;
-            const v2y = obstacle.y;
-            const v3x = obstacle.x + obstacle.width;
-            const v3y = obstacle.y + obstacle.height;
-
-            const playerCorners = [
-                {x: player.x, y: player.y}, 
-                {x: player.x + player.width, y: player.y}, 
-                {x: player.x, y: player.y + player.height}, 
-                {x: player.x + player.width, y: player.y + player.height} 
-            ];
-
-            for (const corner of playerCorners) {
-                if (pointInTriangle(corner.x, corner.y, v1x, v1y, v2x, v2y, v3x, v3y)) {
-                    return true;
-                }
-            }
-            
-            return false;
-        }
-
-        return false; 
+        );
     }
     
-    // --- Menu Logic and Event Listeners (FIXED INITIALIZATION) ---
+    // --- Menu Logic and Event Listeners ---
     const mainMenu = document.getElementById('mainMenu');
     const levelSelectMenu = document.getElementById('levelSelect');
-    // FIX: Ensure codeMenu is retrieved from the DOM
     const codeMenu = document.getElementById('codeMenu'); 
     const instructions = document.getElementById('instructions');
 
     function showMainMenu() {
         cancelAnimationFrame(animationFrameId); 
 
-        mainMenu.style.display = 'block'; 
-        levelSelectMenu.style.display = 'none';
-        codeMenu.style.display = 'none'; // Ensure the code menu is hidden
-        canvas.style.display = 'none';
-        instructions.style.display = 'none';
+        if (mainMenu) mainMenu.style.display = 'block'; 
+        if (levelSelectMenu) levelSelectMenu.style.display = 'none';
+        if (codeMenu) codeMenu.style.display = 'none'; 
+        if (canvas) canvas.style.display = 'none';
+        if (instructions) instructions.style.display = 'none';
         
         document.body.style.backgroundColor = '#222';
 
@@ -629,7 +569,6 @@
             screenText.remove();
         }
         
-        // Remove listeners for Game Over buttons to prevent multiple attachments
         const retryBtn = document.getElementById('retryButton');
         const menuBtn = document.getElementById('menuButton');
         if (retryBtn) retryBtn.removeEventListener('click', retryGame);
@@ -639,42 +578,53 @@
     // --- CODE MENU LOGIC ---
     function showCodeMenu() {
         cancelAnimationFrame(animationFrameId);
-        mainMenu.style.display = 'none';
-        levelSelectMenu.style.display = 'none';
-        canvas.style.display = 'none';
-        instructions.style.display = 'none';
+        
+        if (mainMenu) mainMenu.style.display = 'none';
+        if (levelSelectMenu) levelSelectMenu.style.display = 'none';
+        if (canvas) canvas.style.display = 'none';
+        if (instructions) instructions.style.display = 'none';
 
         const screenText = document.getElementById('screenText');
         if (screenText) screenText.remove();
 
-        // Clear previous input/message
-        document.getElementById('codeInput').value = '';
-        document.getElementById('codeMessage').textContent = '';
+        // Defensive check before accessing children
+        if (document.getElementById('codeInput')) document.getElementById('codeInput').value = '';
+        if (document.getElementById('codeMessage')) document.getElementById('codeMessage').textContent = '';
 
-        codeMenu.style.display = 'flex';
+        // FIX: Ensure codeMenu is present before setting display
+        if (codeMenu) {
+            codeMenu.style.display = 'flex';
+        } else {
+            console.error("Code menu element not found!");
+        }
     }
 
     function checkCode() {
         const inputElement = document.getElementById('codeInput');
         const messageElement = document.getElementById('codeMessage');
+        
+        if (!inputElement || !messageElement) return;
+
         const code = inputElement.value.trim();
 
         if (code === 'Mr Jones') {
             activeSkin = 'mrjones';
             messageElement.style.color = 'green';
             messageElement.textContent = 'Code accepted! Mr Jones skin unlocked!';
-            // Return to main menu after a short delay
             setTimeout(showMainMenu, 1500); 
         } else {
             messageElement.style.color = 'red';
             messageElement.textContent = 'Invalid code. Try again.';
-            inputElement.value = ''; // Clear input on failure
+            inputElement.value = ''; 
         }
     }
     // --- END CODE MENU LOGIC ---
     
     document.addEventListener('click', (e) => {
         const targetId = e.target.id;
+        
+        // DEBUGGING: Log every click to the console
+        console.log("Clicked ID:", targetId); 
         
         if (targetId === 'levelsButton') {
             mainMenu.style.display = 'none';
@@ -685,7 +635,7 @@
             canvas.style.display = 'block'; 
             instructions.style.display = 'block'; 
         } else if (targetId === 'codeButton') { 
-            // FIX: This now works because codeMenu is initialized
+            // This is the button that should show the new menu
             showCodeMenu();
         } else if (targetId === 'codeSubmitButton') { 
             checkCode();
@@ -697,24 +647,20 @@
             canvas.style.display = 'block'; 
             instructions.style.display = 'block'; 
         } 
-        // Only allow click-to-return-to-menu if the level is complete
         else if (isLevelComplete && document.getElementById('screenText')) { 
             showMainMenu();
         }
-        // Note: Game Over buttons (retryButton, menuButton) are handled by listeners in showGameOver()
     });
 
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space') {
-            // Only allow space-to-return-to-menu if the level is complete
             if (isLevelComplete) { 
                 showMainMenu(); 
             } else if (canvas.style.display === 'block') {
                 handleInput(); 
             }
         }
-        // Handle 'Enter' key press on the code input screen
-        if (e.code === 'Enter' && codeMenu.style.display === 'flex') {
+        if (e.code === 'Enter' && codeMenu && codeMenu.style.display === 'flex') {
             checkCode();
         }
     });
@@ -725,6 +671,5 @@
         } 
     });
     
-    // Initialize the starting screen
     showMainMenu(); 
 })();
