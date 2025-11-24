@@ -61,6 +61,25 @@ canvas {
     box-shadow: 0 0 15px #00FF00;
 }
 
+/* --- New Code Input Style --- */
+.code-input {
+    padding: 10px;
+    font-size: 1.2em;
+    width: 80%;
+    max-width: 300px;
+    margin-bottom: 20px;
+    border: 2px solid #00E000;
+    background-color: #333;
+    color: white;
+    text-align: center;
+    border-radius: 5px;
+    outline: none;
+}
+.code-input:focus {
+    box-shadow: 0 0 10px #00FF00;
+}
+/* --- End New Code Input Style --- */
+
 /* --- Level Select Grid (FIXED CSS) --- */
 #levelSelect {
     display: none;
@@ -109,17 +128,4 @@ canvas {
     border-radius: 10px;
     width: 80%; 
     max-width: 400px;
-}
-
-/* --- NEW STYLES for Game Over Buttons --- */
-#gameOverButtons {
-    display: flex;
-    justify-content: space-around; /* Distributes space around buttons */
-    gap: 10px;
-    padding: 0 10px;
-}
-#gameOverButtons .menu-button {
-    flex-grow: 1; /* Make buttons take equal space */
-    font-size: clamp(0.9em, 4vw, 1.2em); /* Smaller font size to fit both buttons */
-    margin: 0; /* Remove excess margin from default menu-button */
 }
