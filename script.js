@@ -134,16 +134,16 @@
     ];
 
     const ALL_LEVELS = {
-        'level1Button': { data: levelData1, name: 'Level 1' },
-        'level2Button': { data: levelData2, name: 'Level 2' },
-        'level3Button': { data: levelData3, name: 'Level 3' },
-        'level4Button': { data: levelData4, name: 'Level 4' },
-        'level5Button': { data: levelData5, name: 'Level 5' },
-        'level6Button': { data: levelData6, name: 'Level 6' },
-        'level7Button': { data: levelData7, name: 'Level 7' },
-        'level8Button': { data: levelData8, name: 'Level 8' },
-        'level9Button': { data: levelData9, name: 'Level 9' },
-        'level10Button': { data: levelData10, name: 'Level 10' }
+        'level1Button': { data: levelData1, name: 'Level 1', number: 1 }, // Added level number
+        'level2Button': { data: levelData2, name: 'Level 2', number: 2 },
+        'level3Button': { data: levelData3, name: 'Level 3', number: 3 },
+        'level4Button': { data: levelData4, name: 'Level 4', number: 4 },
+        'level5Button': { data: levelData5, name: 'Level 5', number: 5 },
+        'level6Button': { data: levelData6, name: 'Level 6', number: 6 },
+        'level7Button': { data: levelData7, name: 'Level 7', number: 7 },
+        'level8Button': { data: levelData8, name: 'Level 8', number: 8 },
+        'level9Button': { data: levelData9, name: 'Level 9', number: 9 },
+        'level10Button': { data: levelData10, name: 'Level 10', number: 10 }
     };
 
     function calculateLevelLength(data) {
@@ -166,12 +166,18 @@
     let animationFrameId; 
     let isInfiniteMode = false; 
 
+    // Speed constants for level progression
+    const BASE_SPEED = 5; // The starting speed for Level 1
+    const LEVEL_SPEED_INCREMENT = 0.3; // How much speed increases per level
+
     // Infinite mode specific variables
     let score = 0;
     let infiniteObstacleTimer = 0;
     const MIN_INFINITE_DELAY = 90;
     const MAX_INFINITE_DELAY = 180;
-
+    const INFINITE_SPEED_UP_INTERVAL = 400; // Increase speed every X frames
+    const INFINITE_SPEED_UP_AMOUNT = 0.1; // Amount to increase speed by
+    
     // --- Player/Obstacle Properties (Unchanged) ---
     const playerWidth = 30;
     const playerHeight = 30;
@@ -180,7 +186,7 @@
     const groundY = actualGroundY - playerHeight; 
     const obstacleWidth = 20;
     
-    // --- Game Initialization ---
+    // --- Game Initialization (MODIFIED) ---
     function init(mode, levelKey = null) {
         cancelAnimationFrame(animationFrameId); 
 
@@ -192,12 +198,19 @@
             activeColors = LEVEL_SCHEMES['infiniteMode'];
             score = 0;
             infiniteObstacleTimer = 120; // Initial delay
+            gameSpeed = BASE_SPEED; // Start infinite mode at Level 1 speed
         } else {
             const levelInfo = ALL_LEVELS[levelKey];
             currentLevelData = levelInfo.data;
             currentLevelName = levelInfo.name;
             levelLength = calculateLevelLength(currentLevelData);
             activeColors = LEVEL_SCHEMES[levelKey]; 
+            
+            // --- SPEED INCREASE FOR LEVELS ---
+            // Calculate speed based on level number
+            const levelNumber = levelInfo.number;
+            gameSpeed = BASE_SPEED + (levelNumber - 1) * LEVEL_SPEED_INCREMENT;
+            // --- END SPEED INCREASE ---
             
             if (currentLevelData && currentLevelData.length > 0) {
                 frameDelay = currentLevelData[0][0]; 
@@ -215,7 +228,6 @@
         };
 
         gravity = 0.7;
-        gameSpeed = 5;
         obstacles = [];
         isGameOver = false;
         isLevelComplete = false; 
@@ -228,7 +240,7 @@
                 y: seededRandom() * (actualGroundY - 100), 
                 width: seededRandom() * 50 + 20, 
                 height: (actualGroundY - 20) - (seededRandom() * 200), 
-                speed: gameSpeed * 0.3 
+                speed: gameSpeed * 0.3 // Use the new gameSpeed
             });
         }
 
@@ -240,7 +252,7 @@
         gameLoop();
     }
     
-    // --- Game Loop ---
+    // --- Game Loop (Unchanged) ---
     function gameLoop() {
         if (isGameOver) {
             showGameOver();
@@ -267,7 +279,7 @@
         animationFrameId = requestAnimationFrame(gameLoop);
     }
     
-    // --- Core Game Functions (MODIFIED FOR INFINITE MODE) ---
+    // --- Core Game Functions (MODIFIED FOR INFINITE MODE SPEED INCREASE) ---
     function updateObstacles() {
         if (isInfiniteMode) {
             infiniteObstacleTimer--;
@@ -289,8 +301,13 @@
                 // Reset timer with a new random delay
                 infiniteObstacleTimer = MIN_INFINITE_DELAY + Math.floor(Math.random() * (MAX_INFINITE_DELAY - MIN_INFINITE_DELAY));
             }
+            
+            // Slightly increase speed over time in infinite mode
+            if (frames % INFINITE_SPEED_UP_INTERVAL === 0) { 
+                 gameSpeed += INFINITE_SPEED_UP_AMOUNT;
+            }
         } else {
-            // Level Mode Logic
+            // Level Mode Logic (Unchanged)
             if (frameDelay === 0 && obstacleIndex < currentLevelData.length) {
                 const [delay, height, type] = currentLevelData[obstacleIndex];
                 
@@ -329,11 +346,6 @@
                 obstacles.splice(i, 1);
             }
         }
-        
-        // Slightly increase speed over time in infinite mode
-        if (isInfiniteMode && frames % 600 === 0 && gameSpeed < 10) { 
-             gameSpeed += 0.2;
-        }
     }
     
     function checkLevelEnd() {
@@ -353,7 +365,7 @@
         }
     }
     
-    // --- Score / Progress Functions ---
+    // --- Score / Progress Functions (Unchanged) ---
     function updateProgressScore() {
         let progress;
         if (isLevelComplete) {
@@ -372,9 +384,11 @@
         ctx.fillStyle = 'white';
         ctx.font = '24px Arial';
         ctx.fillText('Score: ' + score, 20, 30);
+        // Also show speed in infinite mode for user feedback
+        ctx.fillText(`Speed: ${gameSpeed.toFixed(1)}`, canvas.width - 150, 30);
     }
     
-    // --- Screen Logic ---
+    // --- Screen Logic (Unchanged) ---
     function showLevelComplete() {
         cancelAnimationFrame(animationFrameId); 
         if (!document.getElementById('screenText')) {
@@ -396,10 +410,10 @@
         
         if (isInfiniteMode) {
             finalScoreValue = score;
-            finalScoreText = `Score: ${finalScoreValue}`;
+            finalScoreText = `Score: ${finalScoreValue} (Final Speed: ${gameSpeed.toFixed(1)})`;
         } else {
             finalScoreValue = Math.min(100, Math.floor((frames / levelLength) * 100));
-            finalScoreText = `${currentLevelName}: ${finalScoreValue}%`;
+            finalScoreText = `${currentLevelName}: ${finalScoreValue}% (Speed: ${gameSpeed.toFixed(1)})`;
         }
         
         if (!document.getElementById('screenText')) {
@@ -420,10 +434,13 @@
         }
     }
     
-    // --- DRAWING FUNCTIONS (Unchanged) ---
+    // --- DRAWING FUNCTIONS (MODIFIED to use dynamic speed for background objects) ---
     function drawBackground() {
         ctx.fillStyle = activeColors.bgSecondary; 
         for (let obj of backgroundObjects) {
+            // Update object speed based on current gameSpeed
+            obj.speed = gameSpeed * 0.3; 
+            
             obj.x -= obj.speed;
             ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
             if (obj.x + obj.width < 0) {
@@ -477,7 +494,7 @@
         }
     }
     
-    // --- New/Updated Collision Function ---
+    // --- Collision Function (Unchanged) ---
     // Helper function to check if a point (px, py) is inside a triangle (t1, t2, t3)
     // Uses the Barycentric coordinate system check (sign method)
     function pointInTriangle(px, py, t1x, t1y, t2x, t2y, t3x, t3y) {
@@ -490,6 +507,7 @@
         const d2 = sign(px, py, t2x, t2y, t3x, t3y);
         const d3 = sign(px, py, t3x, t3y, t1x, t1y);
 
+        // Optimization: check if all signs are non-negative or all non-positive
         const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
         const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
 
@@ -553,7 +571,7 @@
         return false; // Should not be reached
     }
     
-    // --- Menu Logic and Event Listeners (Updated) ---
+    // --- Menu Logic and Event Listeners (Unchanged) ---
     const mainMenu = document.getElementById('mainMenu');
     const levelSelectMenu = document.getElementById('levelSelect');
     const instructions = document.getElementById('instructions');
@@ -574,7 +592,7 @@
         }
     }
 
-    // *** ATTACH LISTENERS (UPDATED) ***
+    // *** ATTACH LISTENERS (Unchanged) ***
     
     document.addEventListener('click', (e) => {
         const targetId = e.target.id;
