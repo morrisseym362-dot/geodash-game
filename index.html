@@ -28,32 +28,10 @@
         </div>
     </div>
 
-    <!-- NEW: Game Over Screen with Retry/Menu Buttons -->
-    <div id="gameOverScreen" class="menu game-screen-overlay" style="display: none;">
-        <h2 id="gameOverText" style="color: #FF0000; text-shadow: 0 0 15px #FF0000;">Game Over!</h2>
-        <p id="screenText" class="score-text" style="margin-bottom: 30px;"></p>
-        <div class="button-group">
-            <div id="retryButton" class="menu-button retry-button">Retry</div>
-            <div id="menuButton" class="menu-button">Return to Menu</div>
-        </div>
-    </div>
+    <div id="instructions">Click or Press Space to Jump</div>
+    <canvas id="gameCanvas" width="800" height="400"></canvas> 
 
-    <!-- NEW: Level Complete Screen with Next/Menu Buttons -->
-    <div id="levelCompleteScreen" class="menu game-screen-overlay" style="display: none;">
-        <h2 id="completeText" style="color: #00FF00; text-shadow: 0 0 15px #00FF00;">Level Complete!</h2>
-        <p id="completeScoreText" class="score-text" style="margin-bottom: 30px;"></p>
-        <div class="button-group">
-            <div id="nextLevelButton" class="menu-button retry-button">Next Level</div>
-            <div id="completeMenuButton" class="menu-button">Return to Menu</div>
-        </div>
-    </div>
+    <script src="script.js"></script> 
 
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="instructions">
-        Press [Space] or Click to Jump
-    </div>
-    
-    <script src="script.js"></script>
 </body>
 </html>
