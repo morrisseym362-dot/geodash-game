@@ -153,6 +153,12 @@
         });
         return length + 50; 
     }
+
+    // --- Game Speed Control ---
+    const INITIAL_SPEED = 5;
+    const MAX_SPEED = 12;
+    const SPEED_ACCELERATION_RATE = 0.001; // How much speed increases per frame
+    // --- END Game Speed Control ---
     
     // --- Global Game Variables ---
     let player, gravity, gameSpeed, obstacles, isGameOver, isLevelComplete, frames;
@@ -215,7 +221,7 @@
         };
 
         gravity = 0.7;
-        gameSpeed = 5;
+        gameSpeed = INITIAL_SPEED; // Initial speed set here
         obstacles = [];
         isGameOver = false;
         isLevelComplete = false; 
@@ -228,7 +234,7 @@
                 y: seededRandom() * (actualGroundY - 100), 
                 width: seededRandom() * 50 + 20, 
                 height: (actualGroundY - 20) - (seededRandom() * 200), 
-                speed: gameSpeed * 0.3 
+                // Removed 'speed' property, will calculate dynamically
             });
         }
 
@@ -252,6 +258,7 @@
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        updateGameSpeed(); // <-- NEW: Accelerate speed every frame
         drawBackground();
         drawGround();
         updatePlayer();
@@ -266,8 +273,16 @@
         frames++;
         animationFrameId = requestAnimationFrame(gameLoop);
     }
+
+    // --- New Speed Update Function ---
+    function updateGameSpeed() {
+        // Accelerate game speed up to a maximum for all modes
+        if (gameSpeed < MAX_SPEED) {
+            gameSpeed += SPEED_ACCELERATION_RATE;
+        }
+    }
     
-    // --- Core Game Functions (MODIFIED FOR INFINITE MODE) ---
+    // --- Core Game Functions ---
     function updateObstacles() {
         if (isInfiniteMode) {
             infiniteObstacleTimer--;
@@ -317,9 +332,9 @@
         // Common movement and collision check
         for (let i = obstacles.length - 1; i >= 0; i--) {
             let obs = obstacles[i];
-            obs.x -= gameSpeed;
+            obs.x -= gameSpeed; // Uses the continuously updated gameSpeed
             drawObstacle(obs);
-            if (checkCollision(player, obs)) { // CALLS NEW checkCollision
+            if (checkCollision(player, obs)) { 
                 isGameOver = true;
             }
             if (obs.x + obs.width < 0) {
@@ -330,10 +345,7 @@
             }
         }
         
-        // Slightly increase speed over time in infinite mode
-        if (isInfiniteMode && frames % 600 === 0 && gameSpeed < 10) { 
-             gameSpeed += 0.2;
-        }
+        // REMOVED old infinite mode speed increase logic as it is now handled by updateGameSpeed()
     }
     
     function checkLevelEnd() {
@@ -420,11 +432,12 @@
         }
     }
     
-    // --- DRAWING FUNCTIONS (Unchanged) ---
+    // --- DRAWING FUNCTIONS ---
     function drawBackground() {
+        const parallaxSpeed = gameSpeed * 0.3; // Calculate parallax speed dynamically
         ctx.fillStyle = activeColors.bgSecondary; 
         for (let obj of backgroundObjects) {
-            obj.x -= obj.speed;
+            obj.x -= parallaxSpeed; // Use the dynamic parallax speed
             ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
             if (obj.x + obj.width < 0) {
                 obj.x = canvas.width;
@@ -477,7 +490,7 @@
         }
     }
     
-    // --- New/Updated Collision Function ---
+    // --- Collision Functions (Unchanged) ---
     // Helper function to check if a point (px, py) is inside a triangle (t1, t2, t3)
     // Uses the Barycentric coordinate system check (sign method)
     function pointInTriangle(px, py, t1x, t1y, t2x, t2y, t3x, t3y) {
@@ -541,19 +554,13 @@
                 }
             }
             
-            // Note: This basic check (corners only) is a good performance trade-off 
-            // for a small player colliding with a large spike. For a more robust check,
-            // you'd also check if any of the spike's edges intersect the player's AABB.
-            // For now, checking player corners against the spike triangle is a good, 
-            // more accurate replacement for the spike's AABB.
-
             return false;
         }
 
         return false; // Should not be reached
     }
     
-    // --- Menu Logic and Event Listeners (Updated) ---
+    // --- Menu Logic and Event Listeners (Unchanged) ---
     const mainMenu = document.getElementById('mainMenu');
     const levelSelectMenu = document.getElementById('levelSelect');
     const instructions = document.getElementById('instructions');
@@ -574,7 +581,7 @@
         }
     }
 
-    // *** ATTACH LISTENERS (UPDATED) ***
+    // *** ATTACH LISTENERS ***
     
     document.addEventListener('click', (e) => {
         const targetId = e.target.id;
