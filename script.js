@@ -178,19 +178,19 @@
     let lastPlayedMode = 'level'; 
     let lastPlayedLevelKey = 'level1Button'; 
     
-    // --- New Code/Skin Variables ---
+    // NEW: Variable to hold the code menu timeout ID
+    let codeMenuTimeoutId = null; 
+
     let activeSkin = 'default'; 
     const mrJonesImage = new Image();
     mrJonesImage.src = 'Mr Jones.png'; 
     
-    // ADDED: Image loading handlers for debugging
     mrJonesImage.onload = () => {
         console.log("Mr Jones.png loaded successfully.");
     };
     mrJonesImage.onerror = () => {
         console.error("Failed to load Mr Jones.png. Falling back to default skin.");
     };
-    // --- End New Code/Skin Variables ---
 
     let score = 0;
     let infiniteObstacleTimer = 0;
@@ -203,9 +203,9 @@
     const groundY = actualGroundY - playerHeight; 
     const obstacleWidth = 20;
     
-    // --- Game Initialization ---
+    // --- Game Initialization (Omitted for brevity) ---
     function init(mode, levelKey = null) {
-        console.log("init() called for mode:", mode, "key:", levelKey); // Debugging log
+        console.log("init() called for mode:", mode, "key:", levelKey);
         cancelAnimationFrame(animationFrameId); 
 
         isInfiniteMode = (mode === 'infinite');
@@ -297,6 +297,12 @@
 
     function showMainMenu() {
         cancelAnimationFrame(animationFrameId); 
+        
+        // FIX: Clear the code menu timeout if it's pending
+        if (codeMenuTimeoutId !== null) {
+            clearTimeout(codeMenuTimeoutId);
+            codeMenuTimeoutId = null;
+        }
 
         if (mainMenu) mainMenu.style.display = 'block'; 
         if (levelSelectMenu) levelSelectMenu.style.display = 'none';
@@ -321,6 +327,12 @@
     function showCodeMenu() {
         cancelAnimationFrame(animationFrameId);
         
+        // FIX: Clear any existing pending timeout when explicitly entering code menu
+        if (codeMenuTimeoutId !== null) {
+            clearTimeout(codeMenuTimeoutId);
+            codeMenuTimeoutId = null;
+        }
+
         if (mainMenu) mainMenu.style.display = 'none';
         if (levelSelectMenu) levelSelectMenu.style.display = 'none';
         if (canvas) canvas.style.display = 'none';
@@ -352,8 +364,8 @@
             messageElement.style.color = 'green';
             messageElement.textContent = 'Code accepted! Mr Jones skin unlocked!';
             console.log("Code accepted. Returning to main menu in 1.5 seconds...");
-            // The timeout is for the user to see the success message.
-            setTimeout(showMainMenu, 1500); 
+            // FIX: Store the timeout ID
+            codeMenuTimeoutId = setTimeout(showMainMenu, 1500); 
         } else {
             messageElement.style.color = 'red';
             messageElement.textContent = 'Invalid code. Try again.';
@@ -368,9 +380,19 @@
         console.log("Clicked ID:", targetId); 
         
         if (targetId === 'levelsButton') {
+            // FIX: Clear pending timeout if moving to level select
+            if (codeMenuTimeoutId !== null) {
+                clearTimeout(codeMenuTimeoutId);
+                codeMenuTimeoutId = null;
+            }
             mainMenu.style.display = 'none';
             levelSelectMenu.style.display = 'flex'; 
         } else if (targetId === 'infiniteButton') {
+            // FIX: Clear pending timeout if starting infinite mode
+            if (codeMenuTimeoutId !== null) {
+                clearTimeout(codeMenuTimeoutId);
+                codeMenuTimeoutId = null;
+            }
             init('infinite');
             mainMenu.style.display = 'none';
             canvas.style.display = 'block'; 
@@ -382,10 +404,15 @@
         } else if (targetId === 'codeMenuBackButton') { 
             showMainMenu();
         } else if (e.target.classList.contains('level-button')) {
-            // Level Button Click Handler (FIXED)
+            // Level Button Click Handler
             console.log("Level Button Identified. ID:", targetId);
             if (targetId && ALL_LEVELS[targetId]) {
-                // Hide the level selection menu and show the canvas/instructions before calling init
+                // FIX: Clear pending timeout before starting a level
+                if (codeMenuTimeoutId !== null) {
+                    clearTimeout(codeMenuTimeoutId);
+                    codeMenuTimeoutId = null;
+                }
+
                 levelSelectMenu.style.display = 'none';
                 canvas.style.display = 'block'; 
                 instructions.style.display = 'block'; 
