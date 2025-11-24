@@ -73,7 +73,7 @@
         }
     };
 
-    // --- LEVEL DEFINITIONS ---
+    // --- LEVEL DEFINITIONS (Unchanged) ---
     const levelData1 = [
         [0, 50, 'spike'], [120, 70, 'block'], [150, 40, 'spike'], [100, 100, 'block'], 
         [200, 60, 'spike'], [100, 80, 'block'], [120, 50, 'spike'], [200, 50, 'spike'], 
@@ -167,16 +167,16 @@
     let isInfiniteMode = false; 
 
     // --- SPEED CONSTANTS FOR PROGRESSION (MODIFIED) ---
-    const BASE_SPEED = 7; // Increased start speed
-    const LEVEL_SPEED_INCREMENT = 0.3; 
+    const BASE_SPEED = 10; // Increased start speed to 10 for all modes
+    const LEVEL_SPEED_INCREMENT = 1.0; // Increased to make higher levels much faster
     const INFINITE_SPEED_UP_INTERVAL = 400; 
-    const INFINITE_SPEED_UP_AMOUNT = 0.2; // Increased speed-up rate
+    const INFINITE_SPEED_UP_AMOUNT = 0.5; // Increased speed-up rate to 0.5
     
-    // --- INFINITE MODE OBSTACLE TIMING CONSTANTS (CONFIRMED) ---
+    // --- INFINITE MODE OBSTACLE TIMING CONSTANTS (MODIFIED) ---
     const BASE_MIN_DELAY = 90; // Starting minimum gap (frames)
     const BASE_MAX_DELAY = 180; // Starting maximum gap (frames)
     const MIN_POSSIBLE_DELAY = 45; // Absolute minimum gap limit
-    const DELAY_REDUCTION_PER_SCORE = 4; // Frames reduced per obstacle passed
+    const DELAY_REDUCTION_PER_SCORE = 7; // Frames reduced per obstacle passed (Increased to 7)
     
     // Infinite mode specific variables
     let score = 0;
@@ -190,7 +190,7 @@
     const groundY = actualGroundY - playerHeight; 
     const obstacleWidth = 20;
     
-    // --- Game Initialization (MODIFIED GRAVITY) ---
+    // --- Game Initialization ---
     function init(mode, levelKey = null) {
         cancelAnimationFrame(animationFrameId); 
 
@@ -212,6 +212,7 @@
             
             // --- SET SPEED BASED ON LEVEL NUMBER ---
             const levelNumber = levelInfo.number;
+            // Level Speed = BASE_SPEED (10) + (Level Number - 1) * LEVEL_SPEED_INCREMENT (1.0)
             gameSpeed = BASE_SPEED + (levelNumber - 1) * LEVEL_SPEED_INCREMENT;
             // ----------------------------------------
             
@@ -230,7 +231,7 @@
             velocityY: 0, isJumping: false
         };
 
-        // *** GRAVITY REVERTED ***
+        // Gravity restored to 0.7
         gravity = 0.7; 
         
         obstacles = [];
