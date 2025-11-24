@@ -42,12 +42,6 @@ canvas {
     color: #00FF00;
     text-shadow: 0 0 10px #00FF00;
 }
-.menu h2 {
-    font-size: 4vw;
-    max-font-size: 2em;
-    margin-bottom: 20px;
-}
-
 .menu-button {
     display: inline-block;
     padding: 10px 20px; 
@@ -67,7 +61,7 @@ canvas {
     box-shadow: 0 0 15px #00FF00;
 }
 
-/* --- Level Select Grid --- */
+/* --- Level Select Grid (FIXED CSS) --- */
 #levelSelect {
     display: none;
     flex-direction: column;
@@ -76,6 +70,7 @@ canvas {
 }
 #levelGrid {
     display: grid;
+    /* Use a fixed number of columns for better layout control */
     grid-template-columns: repeat(5, 1fr); 
     gap: 15px;
     width: 100%; 
@@ -85,46 +80,33 @@ canvas {
     margin-right: auto;
 }
 .level-button {
-    width: 100%;
-    /* Override margin for grid layout */
-    margin: 0; 
+    width: 100%; 
+    box-sizing: border-box; 
+    height: 45px; 
+    line-height: 25px; 
+    padding: 10px 0; 
+    margin: 0;
+    font-size: clamp(0.9em, 3vw, 1.2em);
+    text-align: center;
 }
 
-/* --- Game Over Screen --- */
+@media (max-width: 500px) {
+    #levelGrid {
+        grid-template-columns: repeat(4, 1fr);
+        max-width: 350px;
+    }
+}
+
+/* Game Over / Win Text Overlay */
 #screenText {
     position: absolute;
-    z-index: 10;
-    color: white;
-    text-align: center;
-    /* Center the screen text vertically and horizontally */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.7);
-    padding: 30px;
+    z-index: 10; 
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
     border-radius: 10px;
-}
-#gameOverButtons {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-}
-
-/* --- Code Menu Styles --- */
-#codeMenu {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-}
-.code-input {
-    width: 80%;
-    max-width: 300px;
-    padding: 10px;
-    font-size: 1.2em;
-    margin-bottom: 20px;
-    border: 2px solid #00FF00;
-    background-color: #333;
-    color: white;
-    text-align: center;
-    border-radius: 5px;
+    width: 80%; 
+    max-width: 400px;
 }
