@@ -172,11 +172,11 @@
     const INFINITE_SPEED_UP_INTERVAL = 400; 
     const INFINITE_SPEED_UP_AMOUNT = 0.1; 
     
-    // --- INFINITE MODE OBSTACLE TIMING CONSTANTS (NEW) ---
+    // --- INFINITE MODE OBSTACLE TIMING CONSTANTS (MODIFIED) ---
     const BASE_MIN_DELAY = 90; // Starting minimum gap (frames)
     const BASE_MAX_DELAY = 180; // Starting maximum gap (frames)
     const MIN_POSSIBLE_DELAY = 45; // Absolute minimum gap limit
-    const DELAY_REDUCTION_PER_SCORE = 1; // Frames reduced from delay range per obstacle passed
+    const DELAY_REDUCTION_PER_SCORE = 2; // FRAMES REDUCED PER OBSTACLE PASSED (Increased from 1 to 2)
     
     // Infinite mode specific variables
     let score = 0;
@@ -287,14 +287,14 @@
         if (isInfiniteMode) {
             infiniteObstacleTimer--;
 
-            // --- DYNAMIC OBSTACLE SPACING LOGIC (NEW) ---
+            // --- DYNAMIC OBSTACLE SPACING LOGIC (MODIFIED CONSTANT) ---
             const reduction = score * DELAY_REDUCTION_PER_SCORE;
             
             // Calculate dynamic min and max delays, ensuring they don't fall below the hard limit
             const currentMinDelay = Math.max(BASE_MIN_DELAY - reduction, MIN_POSSIBLE_DELAY);
-            // Ensure max delay is always slightly greater than min delay for a range
-            const currentMaxDelay = Math.max(BASE_MAX_DELAY - reduction, MIN_POSSIBLE_DELAY + 10); 
-            // ----------------------------------------------
+            // Ensure max delay is always slightly greater than min delay for a range (use a buffer of 10)
+            const currentMaxDelay = Math.max(BASE_MAX_DELAY - reduction, currentMinDelay + 10); 
+            // -------------------------------------------------------------
 
             if (infiniteObstacleTimer <= 0) {
                 // Randomly generate obstacle
@@ -508,7 +508,7 @@
         }
     }
     
-    // --- Collision Function (Unchanged) ---
+    // --- Collision Function (Typo corrected) ---
     function pointInTriangle(px, py, t1x, t1y, t2x, t2y, t3x, t3y) {
         function sign(p1x, p1y, p2x, p2y, p3x, p3y) {
             return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
@@ -516,7 +516,8 @@
 
         const d1 = sign(px, py, t1x, t1y, t2x, t2y);
         const d2 = sign(px, py, t2x, t2y, t3x, t3y);
-        const d3 = sign(sign, py, t3x, t3y, t1x, t1y);
+        // Corrected typo here (was 'sign' instead of 'px')
+        const d3 = sign(px, py, t3x, t3y, t1x, t1y); 
 
         const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
         const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
