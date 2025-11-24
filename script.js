@@ -176,7 +176,7 @@
     const BASE_MIN_DELAY = 90; // Starting minimum gap (frames)
     const BASE_MAX_DELAY = 180; // Starting maximum gap (frames)
     const MIN_POSSIBLE_DELAY = 45; // Absolute minimum gap limit
-    const DELAY_REDUCTION_PER_SCORE = 10; // Frames reduced per obstacle passed (Increased to 10)
+    const DELAY_REDUCTION_PER_SCORE = 15; // Frames reduced per obstacle passed (Increased to 15)
     
     // Infinite mode specific variables
     let score = 0;
