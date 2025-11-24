@@ -164,7 +164,7 @@
     let frameDelay = 0;
     let activeColors = LEVEL_SCHEMES['level1Button']; 
     let animationFrameId; 
-    let isInfiniteMode = false; // NEW FLAG
+    let isInfiniteMode = false; 
 
     // Infinite mode specific variables
     let score = 0;
@@ -319,7 +319,7 @@
             let obs = obstacles[i];
             obs.x -= gameSpeed;
             drawObstacle(obs);
-            if (checkCollision(player, obs)) {
+            if (checkCollision(player, obs)) { // CALLS NEW checkCollision
                 isGameOver = true;
             }
             if (obs.x + obs.width < 0) {
@@ -476,14 +476,81 @@
             ctx.fill();
         }
     }
+    
+    // --- New/Updated Collision Function ---
+    // Helper function to check if a point (px, py) is inside a triangle (t1, t2, t3)
+    // Uses the Barycentric coordinate system check (sign method)
+    function pointInTriangle(px, py, t1x, t1y, t2x, t2y, t3x, t3y) {
+        // Calculate sign of (x1 - x3) * (y2 - y3) - (x2 - x3) * (y1 - y3)
+        function sign(p1x, p1y, p2x, p2y, p3x, p3y) {
+            return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
+        }
+
+        const d1 = sign(px, py, t1x, t1y, t2x, t2y);
+        const d2 = sign(px, py, t2x, t2y, t3x, t3y);
+        const d3 = sign(px, py, t3x, t3y, t1x, t1y);
+
+        const has_neg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+        const has_pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+
+        // Point is in triangle if signs are the same (or zero)
+        return !(has_neg && has_pos);
+    }
 
     function checkCollision(player, obstacle) {
-        return (
+        // 1. Initial broad-phase AABB check for quick exit (still required for both types)
+        if (!(
             player.x < obstacle.x + obstacle.width &&
             player.x + player.width > obstacle.x &&
             player.y < obstacle.y + obstacle.height &&
             player.y + player.height > obstacle.y
-        );
+        )) {
+            return false;
+        }
+
+        // 2. Fine-phase check based on obstacle type
+        if (obstacle.type === 'block') {
+            // AABB is sufficient for blocks
+            return true;
+        } 
+        
+        if (obstacle.type === 'spike') {
+            // A spike is a triangle with vertices:
+            // V1: (obs.x, obs.y + obs.height) - Bottom-Left
+            // V2: (obs.x + obs.width / 2, obs.y) - Top-Middle (Tip)
+            // V3: (obs.x + obs.width, obs.y + obs.height) - Bottom-Right
+
+            const v1x = obstacle.x;
+            const v1y = obstacle.y + obstacle.height;
+            const v2x = obstacle.x + obstacle.width / 2;
+            const v2y = obstacle.y;
+            const v3x = obstacle.x + obstacle.width;
+            const v3y = obstacle.y + obstacle.height;
+
+            // Check if any of the 4 corners of the player box are inside the triangle
+            const playerCorners = [
+                {x: player.x, y: player.y}, // Top-Left
+                {x: player.x + player.width, y: player.y}, // Top-Right
+                {x: player.x, y: player.y + player.height}, // Bottom-Left
+                {x: player.x + player.width, y: player.y + player.height} // Bottom-Right
+            ];
+
+            for (const corner of playerCorners) {
+                if (pointInTriangle(corner.x, corner.y, v1x, v1y, v2x, v2y, v3x, v3y)) {
+                    return true;
+                }
+            }
+            
+            // Note: This basic check (corners only) is a good performance trade-off 
+            // for a small player colliding with a large spike. For a more robust check,
+            // you'd also check if any of the spike's edges intersect the player's AABB.
+            // For now, checking player corners against the spike triangle is a good, 
+            // more accurate replacement for the spike's AABB.
+
+            return false;
+        }
+
+        return false; // Should not be reached
     }
     
     // --- Menu Logic and Event Listeners (Updated) ---
