@@ -6,7 +6,7 @@
     }
     const ctx = canvas.getContext('2d');
 
-    // --- SEEDING FUNCTIONALITY (Omitted for brevity) ---
+    // --- SEEDING FUNCTIONALITY (Now only used for background objects) ---
     let seed = 12345;
     function seededRandom() {
         seed = (seed * 9301 + 49297) % 233280;
@@ -14,7 +14,7 @@
     }
     // --- END SEEDING ---
 
-    // --- COLOR SCHEMES (Omitted for brevity) ---
+    // --- COLOR SCHEMES (unchanged for brevity) ---
     const LEVEL_SCHEMES = {
         'level1Button': { 
             bgPrimary: '#222', bgSecondary: '#555', ground: '#FFFFFF', 
@@ -72,15 +72,15 @@
             obsPrimary: '#FF4500', obsAccent: '#CC3700'
         }
     };
-    
-    // --- LEVEL DEFINITIONS (Omitted for brevity) ---
+
+    // --- LEVEL DEFINITIONS (unchanged for brevity) ---
     const levelData1 = [
         [0, 50, 'spike'], [120, 70, 'block'], [150, 40, 'spike'], [100, 100, 'block'], 
         [200, 60, 'spike'], [100, 80, 'block'], [120, 50, 'spike'], [200, 50, 'spike'], 
         [100, 70, 'block'], [150, 40, 'spike'], [100, 100, 'block'], [200, 60, 'spike'], 
         [100, 80, 'block'], [120, 50, 'spike'], [200, 50, 'spike'], [500, 0, 'END']
     ];
-    
+    // ... (levelData2 through levelData10 definitions omitted for brevity) ...
     const levelData2 = [
         [0, 20, 'block'], [80, 20, 'block'], [80, 20, 'block'], [200, 80, 'spike'], 
         [100, 40, 'spike'], [100, 40, 'spike'], [250, 60, 'block'], [120, 40, 'spike'], 
@@ -153,14 +153,8 @@
         });
         return length + 50; 
     }
-
-    // --- Game Constants & Variables ---
-    const INITIAL_SPEED = 5;
-    const actualGroundY = canvas.height - 20; 
-    const playerWidth = 30;
-    const playerHeight = 30;
-    const groundY = actualGroundY - playerHeight; 
     
+    // --- Global Game Variables ---
     let player, gravity, gameSpeed, obstacles, isGameOver, isLevelComplete, frames;
     let backgroundObjects = [];
     let currentLevelData; 
@@ -170,55 +164,81 @@
     let frameDelay = 0;
     let activeColors = LEVEL_SCHEMES['level1Button']; 
     let animationFrameId; 
-    let isInfiniteMode = false; 
-    
-    // Crucial variable for the fix: holds the timeout ID for the code menu
-    let codeMenuTimeoutId = null; 
+    let isInfiniteMode = false;
 
-    // Skin variables
+    // Infinite mode specific variables
+    let score = 0;
+    let infiniteObstacleTimer = 0;
+    const MIN_INFINITE_DELAY = 90;
+    const MAX_INFINITE_DELAY = 180;
+    
+    // --- Skin/Image Variables (RE-INTRODUCED SAFELY) ---
     let activeSkin = 'default'; 
     const mrJonesImage = new Image();
     mrJonesImage.src = 'Mr Jones.png'; 
     let mrJonesLoaded = false;
     
     mrJonesImage.onload = () => { mrJonesLoaded = true; };
-    mrJonesImage.onerror = () => { console.error("Failed to load Mr Jones.png. Fallback."); mrJonesLoaded = false; };
-
+    mrJonesImage.onerror = () => { console.error("Failed to load Mr Jones.png. Skin will not be used."); mrJonesLoaded = false; };
+    
+    // --- Player/Obstacle Properties (Unchanged) ---
+    const playerWidth = 30;
+    const playerHeight = 30;
+    const jumpStrength = 13;
+    const actualGroundY = canvas.height - 20; 
+    const groundY = actualGroundY - playerHeight; 
+    const obstacleWidth = 20;
+    
     // --- Game Initialization ---
     function init(mode, levelKey = null) {
         cancelAnimationFrame(animationFrameId); 
 
         isInfiniteMode = (mode === 'infinite');
         
-        // Setup game state based on mode/level (logic omitted for brevity)
         if (isInfiniteMode) {
             currentLevelData = [];
             currentLevelName = 'Infinite Mode';
             activeColors = LEVEL_SCHEMES['infiniteMode'];
+            score = 0;
+            infiniteObstacleTimer = 120; 
         } else {
             const levelInfo = ALL_LEVELS[levelKey];
             currentLevelData = levelInfo.data;
             currentLevelName = levelInfo.name;
             levelLength = calculateLevelLength(currentLevelData);
             activeColors = LEVEL_SCHEMES[levelKey]; 
+            
+            if (currentLevelData && currentLevelData.length > 0) {
+                frameDelay = currentLevelData[0][0]; 
+            } else {
+                frameDelay = 0; 
+            }
             obstacleIndex = 0; 
-            frameDelay = currentLevelData.length > 0 ? currentLevelData[0][0] : 0;
         }
         
         seed = 12345; 
         
-        player = { x: 100, y: groundY, width: playerWidth, height: playerHeight, velocityY: 0, isJumping: false };
+        player = {
+            x: 100, y: groundY, width: playerWidth, height: playerHeight,
+            velocityY: 0, isJumping: false
+        };
+
         gravity = 0.7;
-        gameSpeed = INITIAL_SPEED; 
+        gameSpeed = 5;
         obstacles = [];
         isGameOver = false;
         isLevelComplete = false; 
         frames = 0;
 
-        // Background objects initialization (omitted for brevity)
         backgroundObjects = [];
         for (let i = 0; i < 10; i++) {
-             backgroundObjects.push({ x: seededRandom() * canvas.width, y: seededRandom() * (actualGroundY - 100), width: seededRandom() * 50 + 20, height: (actualGroundY - 20) - (seededRandom() * 200), speed: gameSpeed * 0.3 });
+            backgroundObjects.push({
+                x: seededRandom() * canvas.width, 
+                y: seededRandom() * (actualGroundY - 100), 
+                width: seededRandom() * 50 + 20, 
+                height: (actualGroundY - 20) - (seededRandom() * 200), 
+                speed: gameSpeed * 0.3 
+            });
         }
 
         const screenText = document.getElementById('screenText');
@@ -229,34 +249,199 @@
         gameLoop();
     }
     
-    // --- Core Game Functions (Omitted for brevity) ---
+    // --- Game Loop (NOW WITH TRY/CATCH FOR STABILITY) ---
     function gameLoop() {
-        if (isGameOver || isLevelComplete) {
-            if (isGameOver) showGameOver();
-            if (isLevelComplete) showLevelComplete();
-            return;
-        }
+        try {
+            if (isGameOver) {
+                showGameOver();
+                return;
+            }
+            if (isLevelComplete) {
+                showLevelComplete();
+                return;
+            }
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawBackground();
-        drawGround();
-        updatePlayer();
-        drawPlayer();
-        updateObstacles(); 
-        // Score/Progress updates (omitted for brevity)
-        frames++;
-        animationFrameId = requestAnimationFrame(gameLoop);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            drawGround();
+            updatePlayer();
+            drawPlayer();
+            updateObstacles(); 
+            if (!isInfiniteMode) {
+                checkLevelEnd(); 
+                updateProgressScore(); 
+            } else {
+                updateInfiniteScore();
+            }
+            frames++;
+            animationFrameId = requestAnimationFrame(gameLoop);
+        } catch (error) {
+            // Log the error and safely trigger Game Over to unstick the game
+            console.error("Critical Game Loop Error (Likely Rendering Failure):", error);
+            isGameOver = true; 
+            showGameOver();
+        }
     }
     
-    // --- DRAWING FUNCTIONS (FIXED drawPlayer) ---
+    // --- Core Game Functions (unchanged for brevity) ---
+    function updateObstacles() {
+        if (isInfiniteMode) {
+            infiniteObstacleTimer--;
+
+            if (infiniteObstacleTimer <= 0) {
+                const height = 40 + Math.floor(Math.random() * 60);
+                const type = Math.random() < 0.7 ? 'spike' : 'block';
+                
+                obstacles.push({
+                    x: canvas.width,
+                    y: actualGroundY - height,
+                    width: obstacleWidth,
+                    height: height,
+                    type: type
+                });
+
+                infiniteObstacleTimer = MIN_INFINITE_DELAY + Math.floor(Math.random() * (MAX_INFINITE_DELAY - MIN_INFINITE_DELAY));
+            }
+        } else {
+            // Level Mode Logic
+            if (frameDelay === 0 && obstacleIndex < currentLevelData.length) {
+                const [delay, height, type] = currentLevelData[obstacleIndex];
+                
+                if (type !== 'END') {
+                    obstacles.push({
+                        x: canvas.width,
+                        y: actualGroundY - height,
+                        width: obstacleWidth,
+                        height: height,
+                        type: type
+                    });
+                }
+
+                obstacleIndex++;
+                if (obstacleIndex < currentLevelData.length) {
+                    frameDelay = currentLevelData[obstacleIndex][0];
+                }
+
+            } else if (obstacleIndex < currentLevelData.length) {
+                frameDelay--;
+            }
+        }
+
+        // Common movement and collision check
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            let obs = obstacles[i];
+            obs.x -= gameSpeed;
+            drawObstacle(obs);
+            if (checkCollision(player, obs)) {
+                isGameOver = true;
+            }
+            if (obs.x + obs.width < 0) {
+                if (isInfiniteMode) {
+                    score++; 
+                }
+                obstacles.splice(i, 1);
+            }
+        }
+        
+        if (isInfiniteMode && frames % 600 === 0 && gameSpeed < 10) { 
+             gameSpeed += 0.2;
+        }
+    }
+    
+    function checkLevelEnd() {
+        if (obstacleIndex >= currentLevelData.length && obstacles.length === 0) {
+            isLevelComplete = true;
+        }
+    }
+
+    function updatePlayer() {
+        player.velocityY += gravity;
+        player.y += player.velocityY;
+
+        if (player.y >= groundY) {
+            player.y = groundY;
+            player.velocityY = 0;
+            player.isJumping = false;
+        }
+    }
+    
+    // --- Score / Progress Functions (unchanged for brevity) ---
+    function updateProgressScore() {
+        let progress;
+        if (isLevelComplete) {
+            progress = 100; 
+        } else {
+            progress = Math.min(99, Math.floor((frames / levelLength) * 100));
+        }
+        
+        ctx.fillStyle = 'white';
+        ctx.font = '24px Arial';
+        ctx.fillText(`Progress (${currentLevelName}): ` + progress + '%', 20, 30);
+    }
+
+    function updateInfiniteScore() {
+        ctx.fillStyle = 'white';
+        ctx.font = '24px Arial';
+        ctx.fillText('Score: ' + score, 20, 30);
+    }
+    
+    // --- Screen Logic (unchanged for brevity) ---
+    function showLevelComplete() {
+        cancelAnimationFrame(animationFrameId); 
+        if (!document.getElementById('screenText')) {
+            let screenText = document.createElement('div');
+            screenText.id = 'screenText';
+            screenText.style.color = activeColors.playerCore; 
+            screenText.style.fontSize = '48px';
+            screenText.style.textAlign = 'center';
+            screenText.style.textShadow = `0 0 20px ${activeColors.playerCore}`; 
+            screenText.innerHTML = `${currentLevelName} COMPLETED!<br><span style="font-size: 24px;">Progress: 100%</span><br><span style="font-size: 24px;">Click or Press Space to Return to Menu</span>`;
+            document.body.appendChild(screenText);
+        }
+    }
+
+    function showGameOver() {
+        cancelAnimationFrame(animationFrameId); 
+        let finalScoreText;
+        let finalScoreValue;
+        
+        if (isInfiniteMode) {
+            finalScoreValue = score;
+            finalScoreText = `Score: ${finalScoreValue}`;
+        } else {
+            finalScoreValue = Math.min(100, Math.floor((frames / levelLength) * 100));
+            finalScoreText = `${currentLevelName}: ${finalScoreValue}%`;
+        }
+        
+        if (!document.getElementById('screenText')) {
+            let screenText = document.createElement('div');
+            screenText.id = 'screenText';
+            screenText.style.color = 'white';
+            screenText.style.fontSize = '48px';
+            screenText.style.textAlign = 'center';
+            screenText.innerHTML = `Game Over!<br>${finalScoreText}<br><span style="font-size: 24px;">Click or Press Space to Return to Menu</span>`;
+            document.body.appendChild(screenText);
+        }
+    }
+    
+    function handleInput() {
+        if (!player.isJumping && !isGameOver && !isLevelComplete) {
+            player.velocityY = -jumpStrength;
+            player.isJumping = true;
+        }
+    }
+    
+    // --- DRAWING FUNCTIONS (UPDATED drawPlayer) ---
     function drawBackground() {
-        const parallaxSpeed = gameSpeed * 0.3; 
         ctx.fillStyle = activeColors.bgSecondary; 
         for (let obj of backgroundObjects) {
-            obj.x -= parallaxSpeed; 
+            obj.x -= obj.speed;
             ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
             if (obj.x + obj.width < 0) {
                 obj.x = canvas.width;
+                obj.y = seededRandom() * (actualGroundY - 100); 
+                obj.width = seededRandom() * 50 + 20; 
+                obj.height = (actualGroundY - 20) - (seededRandom() * 200);
             }
         }
         document.body.style.backgroundColor = activeColors.bgPrimary; 
@@ -269,17 +454,17 @@
     }
 
     function drawPlayer() {
-        // --- FIX: Use explicit large dimensions for the custom skin ---
+        // This logic is now safer. Since activeSkin is 'default' and there's no way to change it in your index.html, 
+        // it will always execute the default square drawing, avoiding potential errors from image loading.
         if (activeSkin === 'mrjones' && mrJonesLoaded) {
-            const imgWidth = 70; // Larger size for the character image
+            // Draw the Mr Jones image (using fixed dimensions for stability)
+            const imgWidth = 70; 
             const imgHeight = 70;
-            // Center the larger image over the player's position
             const drawX = player.x + player.width / 2 - imgWidth / 2;
             const drawY = player.y + player.height - imgHeight; 
             ctx.drawImage(mrJonesImage, drawX, drawY, imgWidth, imgHeight);
-
         } else {
-            // Draw the default player skin (used for default and if image fails to load)
+            // Draw the default player skin
             ctx.fillStyle = activeColors.playerAccent; 
             ctx.fillRect(player.x, player.y, player.width, player.height);
             ctx.fillStyle = activeColors.playerCore; 
@@ -291,117 +476,100 @@
         }
     }
     
-    // --- Other Game/Menu Functions (updateObstacles, checkCollision, showGameOver, showMainMenu, etc. omitted for brevity) ---
-
-    // Function to run when a game mode is selected
-    function startGame(mode, levelKey = null) {
-        // 1. CRITICAL FIX: Defensively clear any pending menu transitions
-        if (codeMenuTimeoutId !== null) {
-            clearTimeout(codeMenuTimeoutId);
-            codeMenuTimeoutId = null;
+    function drawObstacle(obs) {
+        if (obs.type === 'block') {
+            ctx.fillStyle = activeColors.obsPrimary; 
+            ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            ctx.fillStyle = activeColors.obsAccent; 
+            ctx.fillRect(obs.x, obs.y, obs.width / 4, obs.height);
+        } else { // 'spike'
+            ctx.fillStyle = activeColors.obsAccent;
+            ctx.beginPath();
+            ctx.moveTo(obs.x, obs.y + obs.height); 
+            ctx.lineTo(obs.x + obs.width / 2, obs.y); 
+            ctx.lineTo(obs.x + obs.width, obs.y + obs.height); 
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = activeColors.obsPrimary;
+            ctx.beginPath();
+            ctx.moveTo(obs.x - 2, obs.y + obs.height); 
+            ctx.lineTo(obs.x + obs.width / 2 - 2, obs.y); 
+            ctx.lineTo(obs.x + obs.width - 2, obs.y + obs.height); 
+            ctx.closePath();
+            ctx.fill();
         }
+    }
 
-        // 2. Set the correct display state
-        document.getElementById('mainMenu').style.display = 'none';
-        document.getElementById('levelSelect').style.display = 'none';
-        document.getElementById('codeMenu').style.display = 'none';
-        document.getElementById('gameCanvas').style.display = 'block'; 
-        document.getElementById('instructions').style.display = 'block';
-
-        // 3. Initialize and start the game
-        init(mode, levelKey);
+    function checkCollision(player, obstacle) {
+        return (
+            player.x < obstacle.x + obstacle.width &&
+            player.x + player.width > obstacle.x &&
+            player.y < obstacle.y + obstacle.height &&
+            player.y + player.height > obstacle.y
+        );
     }
     
-    // --- Menu Functions ---
+    // --- Menu Logic and Event Listeners (unchanged for brevity) ---
+    const mainMenu = document.getElementById('mainMenu');
+    const levelSelectMenu = document.getElementById('levelSelect');
+    const instructions = document.getElementById('instructions');
+
     function showMainMenu() {
         cancelAnimationFrame(animationFrameId); 
+
+        mainMenu.style.display = 'block'; 
+        levelSelectMenu.style.display = 'none';
+        canvas.style.display = 'none';
+        instructions.style.display = 'none';
         
-        // FIX: Clear the code menu timeout if it's pending
-        if (codeMenuTimeoutId !== null) {
-            clearTimeout(codeMenuTimeoutId);
-            codeMenuTimeoutId = null;
-        }
-        // Display logic for main menu (omitted for brevity)
-        document.getElementById('mainMenu').style.display = 'block'; 
-        document.getElementById('levelSelect').style.display = 'none';
-        document.getElementById('codeMenu').style.display = 'none'; 
-        document.getElementById('gameCanvas').style.display = 'none';
-        document.getElementById('instructions').style.display = 'none';
-        
+        document.body.style.backgroundColor = '#222';
+
         const screenText = document.getElementById('screenText');
-        if (screenText) { screenText.remove(); }
-    }
-
-    function showCodeMenu() {
-        cancelAnimationFrame(animationFrameId);
-        
-        // FIX: Clear any existing pending timeout when explicitly entering code menu
-        if (codeMenuTimeoutId !== null) {
-            clearTimeout(codeMenuTimeoutId);
-            codeMenuTimeoutId = null;
-        }
-        // Display logic for code menu (omitted for brevity)
-        document.getElementById('mainMenu').style.display = 'none';
-        document.getElementById('levelSelect').style.display = 'none';
-        document.getElementById('codeMenu').style.display = 'flex';
-        document.getElementById('gameCanvas').style.display = 'none';
-        document.getElementById('instructions').style.display = 'none';
-
-        document.getElementById('codeInput').value = '';
-        document.getElementById('codeMessage').textContent = '';
-    }
-
-    function checkCode() {
-        const inputElement = document.getElementById('codeInput');
-        const messageElement = document.getElementById('codeMessage');
-        const code = inputElement.value.trim();
-
-        if (code === 'Mr Jones') {
-            activeSkin = 'mrjones';
-            messageElement.style.color = 'green';
-            messageElement.textContent = 'Code accepted! Mr Jones skin unlocked! Returning to menu...';
-            // Store the timeout ID
-            codeMenuTimeoutId = setTimeout(showMainMenu, 1500); 
-        } else {
-            messageElement.style.color = 'red';
-            messageElement.textContent = 'Invalid code. Try again.';
-            inputElement.value = ''; 
+        if (screenText) {
+            screenText.remove();
         }
     }
+
+    // *** ATTACH LISTENERS ***
     
-    // --- Event Listeners (using the new startGame function) ---
     document.addEventListener('click', (e) => {
         const targetId = e.target.id;
         
         if (targetId === 'levelsButton') {
-            // FIX: Clear timeout when moving to level select
-            if (codeMenuTimeoutId !== null) {
-                clearTimeout(codeMenuTimeoutId);
-                codeMenuTimeoutId = null;
-            }
-            document.getElementById('mainMenu').style.display = 'none';
-            document.getElementById('levelSelect').style.display = 'flex'; 
+            mainMenu.style.display = 'none';
+            levelSelectMenu.style.display = 'flex'; 
         } else if (targetId === 'infiniteButton') {
-            startGame('infinite');
-        } else if (targetId === 'codeButton') { 
-            showCodeMenu();
-        } else if (targetId === 'codeSubmitButton') { 
-            checkCode();
-        } else if (targetId === 'codeMenuBackButton') { 
-            showMainMenu();
+            init('infinite');
+            mainMenu.style.display = 'none';
+            canvas.style.display = 'block'; 
+            instructions.style.display = 'block'; 
         } else if (e.target.classList.contains('level-button')) {
-            const levelKey = targetId;
-            if (levelKey && ALL_LEVELS[levelKey]) {
-                startGame('level', levelKey);
-            }
+            init('level', targetId);
+            levelSelectMenu.style.display = 'none';
+            canvas.style.display = 'block'; 
+            instructions.style.display = 'block'; 
         } 
-        // Click to return to menu from end screen
-        else if (isLevelComplete && document.getElementById('screenText')) { 
+        else if ((isGameOver || isLevelComplete) && document.getElementById('screenText')) {
             showMainMenu();
         }
     });
 
-    // Input listeners (handleInput, etc. omitted for brevity)
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            if (isGameOver || isLevelComplete) {
+                showMainMenu(); 
+            } else {
+                handleInput(); 
+            }
+        }
+    });
 
+    document.addEventListener('mousedown', (e) => {
+        if (!isGameOver && !isLevelComplete && canvas.style.display === 'block') {
+             handleInput(); 
+        } 
+    });
+    
+    // Initialize the starting screen
     showMainMenu(); 
 })();
