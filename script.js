@@ -178,9 +178,19 @@
     let lastPlayedMode = 'level'; 
     let lastPlayedLevelKey = 'level1Button'; 
     
+    // --- New Code/Skin Variables ---
     let activeSkin = 'default'; 
     const mrJonesImage = new Image();
     mrJonesImage.src = 'Mr Jones.png'; 
+    
+    // ADDED: Image loading handlers for debugging
+    mrJonesImage.onload = () => {
+        console.log("Mr Jones.png loaded successfully.");
+    };
+    mrJonesImage.onerror = () => {
+        console.error("Failed to load Mr Jones.png. Falling back to default skin.");
+    };
+    // --- End New Code/Skin Variables ---
 
     let score = 0;
     let infiniteObstacleTimer = 0;
@@ -193,8 +203,9 @@
     const groundY = actualGroundY - playerHeight; 
     const obstacleWidth = 20;
     
-    // --- Game Initialization (Omitted for brevity) ---
+    // --- Game Initialization ---
     function init(mode, levelKey = null) {
+        console.log("init() called for mode:", mode, "key:", levelKey); // Debugging log
         cancelAnimationFrame(animationFrameId); 
 
         isInfiniteMode = (mode === 'infinite');
@@ -209,11 +220,9 @@
             score = 0;
             infiniteObstacleTimer = INITIAL_MAX_DELAY; 
         } else {
-            // CRITICAL: Check if levelKey is valid before proceeding
             const levelInfo = ALL_LEVELS[levelKey];
             if (!levelInfo) {
                 console.error("Invalid level key:", levelKey);
-                // Fall back to main menu if key is invalid
                 showMainMenu();
                 return; 
             }
@@ -308,8 +317,50 @@
         if (menuBtn) menuBtn.removeEventListener('click', showMainMenu);
     }
 
-    function showCodeMenu() { /* Omitted for brevity */ }
-    function checkCode() { /* Omitted for brevity */ }
+    // --- CODE MENU LOGIC ---
+    function showCodeMenu() {
+        cancelAnimationFrame(animationFrameId);
+        
+        if (mainMenu) mainMenu.style.display = 'none';
+        if (levelSelectMenu) levelSelectMenu.style.display = 'none';
+        if (canvas) canvas.style.display = 'none';
+        if (instructions) instructions.style.display = 'none';
+
+        const screenText = document.getElementById('screenText');
+        if (screenText) screenText.remove();
+
+        if (document.getElementById('codeInput')) document.getElementById('codeInput').value = '';
+        if (document.getElementById('codeMessage')) document.getElementById('codeMessage').textContent = '';
+
+        if (codeMenu) {
+            codeMenu.style.display = 'flex';
+        } else {
+            console.error("Code menu element not found!");
+        }
+    }
+
+    function checkCode() {
+        const inputElement = document.getElementById('codeInput');
+        const messageElement = document.getElementById('codeMessage');
+        
+        if (!inputElement || !messageElement) return;
+
+        const code = inputElement.value.trim();
+
+        if (code === 'Mr Jones') {
+            activeSkin = 'mrjones';
+            messageElement.style.color = 'green';
+            messageElement.textContent = 'Code accepted! Mr Jones skin unlocked!';
+            console.log("Code accepted. Returning to main menu in 1.5 seconds...");
+            // The timeout is for the user to see the success message.
+            setTimeout(showMainMenu, 1500); 
+        } else {
+            messageElement.style.color = 'red';
+            messageElement.textContent = 'Invalid code. Try again.';
+            inputElement.value = ''; 
+        }
+    }
+    // --- END CODE MENU LOGIC ---
     
     document.addEventListener('click', (e) => {
         const targetId = e.target.id;
@@ -331,15 +382,15 @@
         } else if (targetId === 'codeMenuBackButton') { 
             showMainMenu();
         } else if (e.target.classList.contains('level-button')) {
-            // FIX: Add check for targetId and ALL_LEVELS validity
+            // Level Button Click Handler (FIXED)
             console.log("Level Button Identified. ID:", targetId);
             if (targetId && ALL_LEVELS[targetId]) {
-                init('level', targetId);
+                // Hide the level selection menu and show the canvas/instructions before calling init
                 levelSelectMenu.style.display = 'none';
                 canvas.style.display = 'block'; 
                 instructions.style.display = 'block'; 
+                init('level', targetId);
             } else {
-                // If this message appears in the console, the ID is missing/invalid.
                 console.error("Failed to start level. Target ID is invalid or missing level data:", targetId);
             }
         } 
